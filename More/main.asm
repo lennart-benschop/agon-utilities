@@ -40,10 +40,10 @@ main1:			LD 	HL, (IX+3)		; source file name
 			RET
 main2: 			LD 	C, A    		; Store source file handle to C.
 			MOSCALL mos_sysvars
-			RES 	4, (IX+4)		; Clear mode flag
+			RES 	4, (IX+sysvar_vpd_pflags)		; Clear mode flag
 			LD 	HL, c_GETMODE
 			CALL	PRCNTSTR  		; Get screen mode parameters.
-main_waitmode:		BIT	4, (IX+4)			
+main_waitmode:		BIT	4, (IX+sysvar_vpd_pflags)			
 			JR 	Z, main_waitmode        ; Wait until received.	
 			XOR 	A
 			LD (prev_cr), A
@@ -131,12 +131,12 @@ PRSTR:			LD	A,(HL)
 do_advance:		LD 	A, (current_col)
 			INC	A
 			LD	(current_col), A
-			CP 	(IX+13h) 		; Are we at the end of the screen line?
+			CP 	(IX+sysvar_scrcols)	; Are we at the end of the screen line?
 			JR	Z, do_newline			
 			RET
 ; Do a newline, if rews-1 lines were printe since last pause, do a pause.			
 do_newline:		LD	A, (current_col)
-			CP	(IX+13h)
+			CP	(IX+sysvar_scrcols)
 			JR	Z, nl_nocrlf		; Skip printing the newline if cursor has advanced to last screen position.
 			LD	A, 13
 			RST.LIL 10h
@@ -148,15 +148,16 @@ nl_nocrlf:		XOR 	A
 			INC 	A
 			LD	(num_lines),A
 			INC	A
-			CP	(IX+14h)
+			CP	(IX+sysvar_scrrows)
 			RET	NZ			; Do we need a pause?
 			XOR 	A
 			LD	(num_lines), A		; Clear line counter
 			LD 	HL, c_MORE
 			CALL 	PRCNTSTR		; Print More message
-$$:			MOSCALL	mos_getkey
+$$:			LD      A, (IX+sysvar_keycode)
 			AND 	A
-			JR	Z, $B
+			JR	Z, $B			; Do this instead of MOSCALL mos_getkey because it has a race condition.
+			LD	(IX+sysvar_keycode), 0
 			CP	'Q'
 			JR	Z, do_quit
 			CP	'q'

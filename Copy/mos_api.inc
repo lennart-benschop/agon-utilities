@@ -11,7 +11,8 @@
 ; 05/09/2022:	Added mos_ren, vdp_pflag_mode
 ; 24/09/2022:	Added mos_getError, mos_mkdir
 ; 13/10/2022:	Added mos_oscli
-
+; 29/12/2022:	Added sysvars for screen dimeensions.  
+;
 ; MOS high level functions
 ;
 mos_getkey:		EQU	00h
@@ -104,7 +105,11 @@ sysvar_cursorY:		EQU	08h
 sysvar_scrchar:		EQU	09h
 sysvar_scrpixel:	EQU	0Ah
 sysvar_audioChannel:	EQU	0Dh
-syscar_audioSuccess:	EQU	0Eh
+sysvar_audioSuccess:	EQU	0Eh
+sysvar_scrwidth		EQU     0Fh
+sysvar_scrheight        EQU     11h		
+sysvar_scrcols          EQU     13h
+sysvar_scrrows          EQU     14h
 	
 ; Flags for the VPD protocol
 ;
