@@ -5,6 +5,7 @@
 <files>
 <file filter-key="">.\init.asm</file>
 <file filter-key="">.\main.asm</file>
+<file filter-key="">.\parse.asm</file>
 </files>
 
 <!-- configuration information -->

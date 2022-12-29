@@ -2,7 +2,9 @@
 ; Title:	Copy - Main
 ; Author:	Lennart Benschop
 ; Created:	26/12/2022
-;
+; Modified:	29/12/2022. 
+;		- Don't be naughty and just steal some memory, only use if buffer address is in third parameter
+;		- Check address before storing the byte.
 
 			.ASSUME	ADL = 1			
 
@@ -10,11 +12,9 @@
 			INCLUDE "mos_api.inc"
 
 			SEGMENT CODE
-			
+			XREF	ASC_TO_NUMBER		
 			XDEF	_main
 
-BUF_START		EQU 090000h
-BUF_END			EQU 0B0000h
 
 ; This program sopies a single file, command line has source file and destination file name.
 ; 
@@ -30,8 +30,36 @@ BUF_END			EQU 0B0000h
 ;
 _main:			LD	A, C
 			CP 	#3
-			JR  	Z, main1
-			LD 	HL, s_USAGE		; Number of args != 3, print usage string and exit
+			JR  	Z, main_defaultbuf
+			CP	#4
+			JR	Z, main_bufparam
+			
+			LD 	HL, s_USAGE		; Number of args not 3 or 4, print usage string and exit
+			CALL	PRSTR
+			LD	HL, 19
+			RET
+			
+main_defaultbuf:	LD 	HL, default_buf
+			LD	(buf_start), HL
+			LD	HL, default_buf_end
+			LD 	(buf_end), HL
+			JR	main1
+main_bufparam		LD	HL, (IX+9)
+			CALL	ASC_TO_NUMBER
+			JR	NC, main_badbuf
+			LD	HL, 03ffffh
+			AND A
+			SBC	HL, DE
+			JR	NC, main_badbuf
+			LD	HL, 0b0000h
+			AND A
+			SBC	HL, DE
+			JR 	C,  main_badbuf
+			LD	(buf_start), DE
+			LD	HL, 0B0000h
+			LD	(buf_end), HL
+			JR	main1
+main_badbuf:		LD 	HL, s_BADADDR
 			CALL	PRSTR
 			LD	HL, 19
 			RET
@@ -46,22 +74,22 @@ main1:			LD 	HL, (IX+3)		; source file name
 			RET
 main2: 			LD 	C, A    		; Store source file handle to C.
 			; Load one byte per character. not possible to determine file length from MOS load command.
-main_load		LD 	HL, BUF_START
-			LD	DE, BUF_END
+main_load		LD 	HL, (buf_start)
+			LD	DE, (buf_end)
 main_load_loop		MOSCALL mos_feof
 			CP 	1
 			JR 	Z, main_load_end
 			MOSCALL mos_fgetc		; Fortunately fgetc transparently passes all bytes.
 			; mos_fgetc does not set carry flag at EOF in MOS 1.02, bummer, therefore separate mos_feof call in the loop.
-			LD	(HL),A			; Store loaded char into buffer.
-			INC	HL
 			AND	A
 			SBC 	HL, DE			; Compare against limit.
 			JR	NC, main_buffer_full
 			ADD	HL, DE			; undo subtraction
+			LD	(HL),A			; Store loaded char into buffer.
+			INC	HL
 			JR	main_load_loop
 main_load_end		MOSCALL mos_fclose
-			LD 	DE, BUF_START
+			LD 	DE, (buf_start)
 			AND 	A
 			SBC	HL, DE			; HL has file length.
 			PUSH 	HL
@@ -103,13 +131,19 @@ PRSTR:			LD	A,(HL)
 ; Text messages
 ;
 s_ERROR_SRC:		DB 	" Cannot open source file\n\r", 0
-s_ERROR_BUF:		DB 	" File buffer full\n\r", 0	
+s_ERROR_BUF:		DB 	" File buffer full,\n\r", 0	
 s_ERROR_DF:		DB	" Disk full\n\r", 0
-s_ERROR_SAVE		DB	" Cannot save file\n\r", 0
-s_USAGE:		DB	" Usage: copy <srcfile> <dstfile>\n\r", 0
+s_ERROR_SAVE:		DB	" Cannot save file\n\r", 0
+s_USAGE:		DB	" Usage: copy <srcfile> <dstfile> [<bufaddr>]\n\r", 0
+s_BADADDR		DB	" Bad buffer address\n\r", 0	
 	
 ; RAM
 ; 
+buf_start:		DS 3
+buf_end:		DS 3
+; The default Copy buffer is in the space between the end of the program and the top of the MOS command space.
+default_buf		EQU 0B0000h+750 ; NOTE: Adjust to actual file size!!!
+default_buf_end		EQU 0B8000h
 			DEFINE	LORAM, SPACE = ROM
 			SEGMENT LORAM
 			
