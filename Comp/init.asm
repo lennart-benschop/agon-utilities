@@ -26,7 +26,7 @@ argv_ptrs_max:		EQU	16			; Maximum number of arguments allowed in argv
 ; The header stuff is from byte 64 onwards
 ;
 
-_exec_name:		DB	"MORE.BIN", 0		; The executable name, only used in argv
+_exec_name:		DB	"COMP.BIN", 0		; The executable name, only used in argv
 
 			ALIGN	64
 			

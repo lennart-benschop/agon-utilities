@@ -16,7 +16,7 @@
 			XDEF	_main
 
 
-; This program sopies a single file, command line has source file and destination file name.
+; This program copies a single file, command line has source file and destination file name.
 ; 
 ; Collects the file in a buffer outside code space, currently limited to 128kB.
 ;	- Read via mos_fgetc loop, as mos_load does not return the file length.
@@ -139,11 +139,12 @@ s_BADADDR		DB	" Bad buffer address\n\r", 0
 	
 ; RAM
 ; 
+			DEFINE	LORAM, SPACE = ROM
+			SEGMENT LORAM
+			
 buf_start:		DS 3
 buf_end:		DS 3
 ; The default Copy buffer is in the space between the end of the program and the top of the MOS command space.
-default_buf		EQU 0B0000h+750 ; NOTE: Adjust to actual file size!!!
+default_buf:
 default_buf_end		EQU 0B8000h
-			DEFINE	LORAM, SPACE = ROM
-			SEGMENT LORAM
 			

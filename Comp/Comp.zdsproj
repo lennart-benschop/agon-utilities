@@ -5,6 +5,7 @@
 <files>
 <file filter-key="">.\init.asm</file>
 <file filter-key="">.\main.asm</file>
+<file filter-key="">.\output.asm</file>
 </files>
 
 <!-- configuration information -->
@@ -169,7 +170,7 @@ CHANGE LORAM=RAM</option>
 <option name="map" type="boolean" change-action="none">true</option>
 <option name="maxhexlen" type="integer" change-action="build">64</option>
 <option name="objlibmods" type="string" change-action="build"></option>
-<option name="of" type="string" change-action="build">Release\More</option>
+<option name="of" type="string" change-action="build">Release\Comp</option>
 <option name="quiet" type="boolean" change-action="none">true</option>
 <option name="relist" type="boolean" change-action="build">true</option>
 <option name="startuptype" type="string" change-action="build">Included</option>
