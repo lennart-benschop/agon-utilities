@@ -5,6 +5,9 @@ These are small utilities that everybody has taken for granted on UNIX, but even
 The project will include an editor some day. All are MOS commands, all are written in Assembly language and all run in 24-bit ADL mode.
 Parts of the code are based on the repository https://github.com/breakintoprogram/agon-projects
 
+The projects are built with Zilog ZDS-II and binaries are provided, that you can put in the `/mos` directory
+of the SD-card.
+
 ### copy
 
 The copy command can copy a single file. By default the command is limited to A file up to about 31kB, as it has to store the file instead the area
@@ -16,7 +19,7 @@ Example command line: `copy file1.bin file2.bin`
 
 Example command line specifying buffer: `copy file1.bin file2.bin &80000`
 
-###comp
+### comp
 
 Once you copied a file, you want to check whether the copied file is an exact copy. The comp utility compares two files. It tells whether they are the same,
 at which offset the first difference occurs or whether one file is larger than the other but they are the same up to the length of the smaller file.
@@ -43,12 +46,14 @@ although only chars 32..126 and 128..255 can be used.
 
 Example command: `font /fonts/bbcasc-8.bin`
 
-Example command that shows the font just loaded: `font /fonts/latin1-8.bin show`
+Example command that shows the font just loaded: 
+
+`font /fonts/latin1-8.bin show`
 
 Two fonts are included: 
 - `bbcasc-8.bin` is the binary version of the font loaded on bootup by the vdp. It was derived from the file `agon_font.h`
  in the VDP project. It contains only ASCII characters with the pounds sign at position 0x60.
-- `latin1-8.bin` is an IOS 8859-1 font (Latin1) that I derived from the following gitthub project. The font provided had
+- `latin1-8.bin` is an ISO 8859-1 font (Latin1) that I derived from the following github project. The font provided had
  the bytes bit-reversed compared to what we need, so I changed it to the right format. It does not look pretty, but it's a start.
 https://github.com/dhepper/font8x8
 
