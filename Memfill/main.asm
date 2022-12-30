@@ -2,6 +2,7 @@
 ; Title:	Memfill - Main
 ; Author:	Lennart Benschop
 ; Created:	29/12/2022
+; Changed:	30/12/2022 handle length = 0 and length = 1
 
 			.ASSUME	ADL = 1			
 
@@ -42,14 +43,21 @@ mein2:			CALL	ASC_TO_NUMBER
 			LD	A, E
 			POP	BC
 			POP	DE
+			LD 	HL, 1
+			AND 	A
+			SBC	HL, BC
+			JR	Z, main_fill1		; Special case if length=1
+			JR	NC, main_end		; No carry only if BC is 1 or less. So it must be 0 now.
 			LD	HL, 0
 			ADD	HL, DE			; Copy DE to HL
 			LD	(HL), A
 			INC	DE
 			DEC	BC
 			LDIR				; The classic way to fill a memory regain on Z80		
-			LD	HL, 0
+main_end:		LD	HL, 0
 			RET
+main_fill1:		LD	(DE),A			; Fill only one byte
+			JR	main_end
 main_badnum_pop2:	POP	HL
 main_badnum_pop1:	POP	HL
 main_badnum:		LD	HL, s_BADNUM
