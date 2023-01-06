@@ -60,3 +60,31 @@ https://github.com/dhepper/font8x8
 You can check out https://github.com/epto/epto-fonts
 The `*.font` files included in the project contain meta-information, but they start with the bitmap data in a form that the font utility can use.
 The 8x8 fonts from this set, you can just load with the font utility. It ignores the meta data. Some of them are only ASCII, some of them have code page 437 fonts.
+
+### nano
+
+This is an editor with nano-style key bindings.
+
+Example command: `nano myfile.txt`
+
+The command can take a second parameter to specify the buffer, so larger files can be loaded.
+Example command when specifying a buffer. This works the same way as for the copy command.
+
+Example command using a buffer:
+`nano myfile.txt &90000`
+
+It can take a second command to specify the line number on which the cursor must start. Example:
+`nano myfile.txt &90000 231`
+
+The edditor runs in MODE 0 (it selects this mode when started) and tries to return to the mode from which it was called.
+Key bindings are nano-style, but not all are implemented (far from).
+
+Implemented key bindings: Control-A, Control-E to go to the start or end of a line, Control-Y and Control-V for page-up and
+page-down, Control-G to see a help screen, Control-X to exit, Control-O to save the file, Control-D for forward delete.
+And of course the cursor keys, TAB, Backspace and Enter.
+
+Planned: Control-K for cut lines, Control-U for paste, Control-R for reading and inserting a file, Control-W and Control-Q
+for search forward and backward. Also Control-T to insert special characters.
+
+
+ 
