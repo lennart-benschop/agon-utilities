@@ -19,6 +19,7 @@
 			XDEF	Restore_Screen
 			XDEF	Inverse_Video
 			XDEF	True_Video
+			XDEF	Clear_EOL
 			
 			XREF	Saved_Rows
 			XREF	Current_Rows
@@ -145,6 +146,39 @@ Restore1:		LD	A, 22
 			RST.LIL 10h
 			LD 	A, L
 			RST.LIL 10h
+			RET
+			
+; Clear to the end of line by printing spaces. so cursor will wrap to next line.
+; When at the bottom row, do not print the rightmost column to avoid scrolling.
+			
+Clear_EOL:		PUSH 	IX
+			PUSH	BC
+			MOSCALL mos_sysvars
+			RES	0, (IX+sysvar_vpd_pflags)
+			LD	A, 23	
+			RST.LIL 10h
+			XOR	A
+			RST.LIL 10h
+			LD	A, 2
+			RST.LIL 10h	; Ask the VDP to send cursor position.
+$$:			BIT	0, (IX+sysvar_vpd_pflags)
+			JR	Z, $B	; Wait for result.
+			LD	A, (Current_Cols)
+			LD	B, A	; Number of columns to B
+			LD	A, (Current_Rows)
+			DEC	A
+			CP	(IX+sysvar_cursorY)
+			JR	NZ, $F	; Are we on bottom row?
+			DEC	B	; Then only fill out up to last column, do not write a space there.
+$$:			LD	A, (IX+sysvar_cursorX)
+			SUB	B
+			NEG	
+			LD	B, A	; B contains desired column position - current cursor.
+$$:			LD	A, ' '
+			RST.LIL	10h
+			DJNZ	$B	
+			POP	BC
+			POP 	IX
 			RET
 
 s_CRLF:			DB	13,10,0

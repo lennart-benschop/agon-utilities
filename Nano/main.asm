@@ -20,6 +20,7 @@
 			XREF	Restore_Screen
 			XREF	Inverse_Video
 			XREF	True_Video
+			XREF	Clear_EOL
 			XDEF	Saved_Rows
 			XDEF	Current_Rows
 			XDEF	Current_Cols
@@ -135,6 +136,8 @@ $$			LD 	A, (HL)
 			LD	HL, 1
 			LD	(cur_lineno), HL
 			LD	(top_lineno), HL
+			DEC	HL
+			LD	(cutbuf_lines), HL
 			XOR	A
 			LD	(cursor_row), A
 			LD	(cursor_col), A
@@ -150,7 +153,10 @@ $$			LD 	A, (HL)
 			CALL	Adjust_Top
 			LD	(save_sp), SP		; Save the stack pointer so we can return here in case of error.
 			; Main editor loop
-main_loop:		CALL	Read_Key
+main_loop:		XOR	A
+			LD	(cut_continue), A	; No continued cut/copy by default.
+			; Return her after cut/copy, so repeated keypress will add more lines to buffer.
+main_loop_continue:	CALL	Read_Key
 			CP 	127
 			JR 	Z, do_backspace		; Backspace key.
 			CP 	32
@@ -186,7 +192,7 @@ main_dispatch:		; Dispatch table for all control characters/
 			DL	main_loop		; NULL character, cannot happen
 			DL	do_line_start		; ^A start of line
 			DL	do_cur_left		; ^B cursor left
-			DL	main_loop		; 
+			DL	do_copy			; ^C copy current line		; 
 			DL	do_delete		; ^D delete to right
 			DL	do_line_end		; ^E end of line 
 			DL	do_cur_right		; ^F cursor right
@@ -194,8 +200,8 @@ main_dispatch:		; Dispatch table for all control characters/
 			DL	do_goto			; ^H goto line
 			DL	do_tab			; ^I TAB
 			DL	main_loop		; 
-			DL	main_loop		; ^K cut current line
-			DL	main_loop		; 
+			DL	do_cut			; ^K cut current line
+			DL	do_center		; ^L screen center
 			DL	do_enter		; ^M Enter, 
 			DL	do_cur_down		; ^N cursor down
 			DL	do_save			; ^O write file
@@ -204,7 +210,7 @@ main_dispatch:		; Dispatch table for all control characters/
 			DL	main_loop		; ^R read file
 			DL	main_loop		; 
 			DL	main_loop		; ^T insert special character
-			DL	main_loop		; ^U paste
+			DL	do_paste		; ^U paste
 			DL	do_page_down		; ^V page down
 			DL	main_loop		; ^W search forward
 			DL	do_exit			; ^X Exit
@@ -516,6 +522,29 @@ do_page_down:		CALL	Leave_Current
 			CALL 	Adjust_Top
 			JP	main_loop
 			
+; Adjust screen (^L) such that current line is shown in the centre.			
+do_center:		CALL	Leave_Current
+			LD	HL, (cur_lineaddr)
+			LD	(top_lineaddr), HL
+			LD	HL, (cur_lineno)
+			LD	(top_lineno), HL	
+			LD	IX, top_lineaddr	; Set top line to current.
+			LD	BC, 0
+			LD	A, (Current_Rows)
+			DEC	A
+			DEC	A
+			SRL	A
+			LD	C, A
+			CALL	Lines_Backward		; Move top line half screen above current line.
+			LD	HL, (cur_lineno)
+			LD	DE, (top_lineno)
+			AND	A				
+			SBC     HL, DE				; Recompute cursor row as top may have hit line 1.
+			LD	A, L
+			LD 	(cursor_row),A
+			CALL	Show_Screen
+			JP	main_loop
+			
 ; Goto line (^H), enter line number and move to that line.
 do_goto:		CALL	Leave_Current
 			CALL	Clear_BottomRow
@@ -542,28 +571,114 @@ do_goto:		CALL	Leave_Current
 			CALL	Adjust_Top
 			JP	main_loop
 
-; Clear the bottom row for a prompt.
+; Cut (^K) single line	
+do_cut:			LD	A, (cut_continue)
+			AND	A
+			JR	NZ, $F
+			LD	HL, (buf_end)
+			LD	(cutbuf_start), HL	; Clear the old cutbuffer if not continuing.
+			LD	HL, 0
+			LD	(cutbuf_lines), HL
+			LD	HL, (cur_lineno)
+			LD	DE, (num_lines)
+			AND	A
+			SBC	HL, DE		
+			JP	Z, main_loop		; We are NOT allowed to cut the last line.
+$$:			CALL	Enter_Current
+			LD	A, (curline_length)
+			PUSH 	AF
+			XOR	A
+			LD	(curline_length), A	; Set curline_length to 0, causing Leave_Current to replace current line by emptiness,
+			INC	A
+			INC	A
+			LD	(curline_stat), A	; Mark current line as modified.
+			CALL	Leave_Current
+			LD	HL, (num_lines)
+			DEC	HL
+			LD	(num_lines), HL
+			POP 	AF			; Get original line length back.
+			LD	(curline_length), A
+			CALL	Cutbuffer_Add		; Add the line to the cut buffer.
+			CALL	Show_Screen
+			LD	A, 1
+			LD 	(cut_continue), A
+			JP	main_loop_continue
+
+; Copy (^C) single line
+do_copy:		LD	A, (cut_continue)
+			AND	A
+			JR	NZ, $F
+			LD	HL, (buf_end)
+			LD	(cutbuf_start), HL	; Clear the old cutbuffer if not continuing.
+			LD	HL, 0
+			LD	(cutbuf_lines), HL
+$$:			CALL	Enter_Current
+			CALL	Cutbuffer_Add		; Add the line to the cutbuffer.	
+			CALL	Leave_Current		; CALL Leave_Current because we move to next line.
+			LD	IX, cur_lineaddr
+			LD	BC, 1
+			CALL 	Lines_Forward		; Move to next line.
+			CALL	Adjust_Top
+			LD	A, 1
+			LD 	(cut_continue), A
+			JP	main_loop_continue
+
+; Paste (^U) contents of cutbuffer
+do_paste:		CALL	Leave_Current
+			LD	HL, (cutbuf_start)
+			PUSH 	HL			; Keep current line address in cut buffer on the stack during the loop.	
+do_paste1:		POP	HL
+			PUSH 	HL
+			LD	DE, (buf_end)
+			AND	A
+			SBC	HL, DE
+			JR	Z,  paste_end		; Did we reach the end of the paste buffer?  
+			POP	HL
+			PUSH 	HL			; stack: old_lineaddr 
+			
+			CALL	Next_LineAddr
+			POP	DE						;
+			PUSH	HL
+			PUSH    DE			; stack: new_lineaddr old_lineaddr
+			AND	A
+			SBC	HL, DE
+			LD	BC, 0
+			LD	C, L			; Determine length of first line in cut buffer.
+			LD	A, L			; Length goes to BC for LDIR and to curline_length	
+			LD 	(curline_length), A
+			XOR 	A
+			LD	(oldcurline_length), A	; by setting oldcurline_length to 0, nothing gets overwritten, line gets inserted.
+			INC	A
+			INC	A
+			LD	(curline_stat),A	; Mark linebuf as modified
+			POP 	HL			; source address
+			LD	DE, linebuf		
+			LDIR				; Copy line of cutbuf to linebuf.
+			CALL	Leave_Current		
+			LD	HL, (num_lines)
+			INC	HL
+			LD	(num_lines), HL
+			LD	BC, 1
+			LD	IX, cur_lineaddr
+			CALL	Lines_Forward		; Skip past line that got just inserted.
+			JR	do_paste1					
+paste_end:		POP 	HL
+			CALL	Adjust_Top
+			CALL	Show_Screen
+			JP	main_loop
+
+; Clear the bottom row for a prompt, reset the cursor to start of that line.
 Clear_BottomRow:	LD	A, 31
 			RST.LIL	10h
-			LD	A, 0
+			XOR 	A
 			RST.LIL 10h
 			LD	A, (Current_Rows)
 			DEC	A
 			RST.LIL 10h
-			LD	A, (Current_Cols)
-			LD 	B, A
-			DEC	B
-$$:			LD	A, 32
+			CALL	Clear_EOL
+			LD	A, 13
 			RST.LIL 10h
-			DJNZ	$B
-			LD	A, 31
-			RST.LIL	10h
-			LD	A, 0
-			RST.LIL 10h
-			LD	A, (Current_Rows)
-			DEC	A
-			RST.LIL 10h
-			RET		
+			RET
 
 ; Draw the entire edit screen, including top and bottom status lines.
 Show_Screen:		LD	A, 12
@@ -573,8 +688,8 @@ Show_Screen:		LD	A, 12
 			CALL    Print_String
 			LD	HL, filename
 			CALL	Print_String
+			CALL	Clear_EOL
 			CALL 	True_Video
-			CALL	Print_CRLF
 			
 			LD	HL, (top_lineaddr)
 			LD	A, (Current_Rows)
@@ -623,38 +738,10 @@ Show_Status:			; Show status line at bottom of screen
 			CALL	Print_Decimal
 			LD 	HL, s_HELP_Small
 			CALL 	Print_String
+			LD	HL, (cutbuf_lines)
+			CALL	Print_Decimal
+			CALL	Clear_EOL
 			CALL	True_Video
-			; Leave this code in, commented. It shows how to print extra diagnostic information while debugging
-			;LD	A, (curline_length)
-			;LD	HL, 0
-			;LD	L, A
-			;CALL	Print_Decimal
-			;LD	A, ' '
-			;RST.L	10h
-			;LD	A, (linebuf_editpos)
-			;LD	HL, 0	
-			;LD 	L,A
-			;CALL	Print_Decimal
-			;LD	A, ' '
-			;RST.L	10h
-			;LD	A, (cursor_col_max)
-			;LD	HL, 0	
-			;LD 	L,A
-			;CALL	Print_Decimal
-			;LD	A, ' '
-			;RST.L	10h
-			;LD	A, (curline_stat)
-			;LD	HL, 0	
-			;LD 	L,A
-			;CALL	Print_Decimal
-			;LD	A, ' '
-			;RST.L	10h
-			;LD	A, (linebuf_scrolled)
-			;LD	HL, 0	
-			;LD 	L,A
-			;CALL	Print_Decimal
-			;LD	A, ' '
-			;RST.L	10h
 ; Position (blinking) text cursor at correct location.			
 Show_Cursor:		LD	A, 31
 			RST.LIL 10h
@@ -900,6 +987,7 @@ Adjust_Top:		LD	HL, (cur_lineno)
 			ADD	HL, DE
 			LD	A, L
 			LD 	(cursor_row),A
+			CALL	Render_Current_Line
 			CALL	Show_Status
 			RET
 			
@@ -1207,7 +1295,44 @@ Delete_Char:		LD	BC, 0
 			DEC	A
 			LD	(file_modified), A
 			RET
-			
+
+
+; Append line in linebuf to the cut buffer. Move existing cut buffer lines down in RAM (first check space).
+; Pre: linebuf contains the line to be inserted, curline_Lnegth is its length.
+
+Cutbuffer_Add:		lD	HL, (cutbuf_start)
+			LD	DE, 0
+			LD	A, (curline_length)
+			LD	E, A
+			AND	A
+			SBC 	HL, DE
+			PUSH	HL				; Push new start of cut buffer
+			LD	DE, (text_end)
+			AND	A
+			SBC	HL, DE	
+			JP	C, Memory_Full			; Check for memory full.
+			POP	DE
+			LD	HL, (buf_end)
+			LD	BC, (cutbuf_start)
+			AND	A
+			SBC 	HL, BC
+			PUSH 	HL
+			POP 	BC
+			LD	HL, (cutbuf_start)
+			LD	(cutbuf_start), DE
+			JR	Z, Cutbuffer_Add_Linebuf
+			LDIR					; Move cutbuffer down			
+Cutbuffer_Add_Linebuf	; Note: DE points to the address at the end of the cut buffer, just where we want it.
+			LD	HL, linebuf
+			LD	BC, 0
+			LD	A, (curline_length)
+			LD	C, A
+			LDIR	
+			LD	HL, (cutbuf_lines)
+			INC	HL
+			LD	(cutbuf_lines), HL
+			RET
+
 ; Load a file into the edit buffer.
 ; Remove control characters and normalize all line endings into CR-LF. Make sure a trailing CR-LF is present.
 ; This function is used at the start to load the file initially and also by the 'insert' file command.
@@ -1455,10 +1580,10 @@ Save_Nobackup		LD	DE, (buf_start)
 			LD	HL, filename
 			MOSCALL	mos_save
 			AND 	A
-			JR	Z, Save_End
-			LD	HL, s_SAVEERR
-			CALL	Print_String
-			CALL 	Read_Key
+			JR      Z, Save_End
+			LD      HL, s_SAVEERR
+			CALL    Print_String
+			CALL    Read_Key
 			CP	'n'
 			JR	Z, Save_End
 			CP	'N'
@@ -1513,21 +1638,23 @@ s_NAME:			DB	"Editor for Agon ",0
 s_LINE			DB	"Line ",0
 s_HELP_Small:		DB	" bytes -- Esc to exit, Ctrl-G for help ",0
 
-s_HELP_Large:		DB      12, "Text editor for Agon v0,01, Copyright 2023, L.C. Benschop\r\n"
+s_HELP_Large:		DB      12, "Text editor for Agon v0,02, Copyright 2023, L.C. Benschop\r\n"
 			DB	"\r\n"
 			DB  	"Cursor movement:\r\n"	
 			DB	"Ctrl-B or cursor left, Ctrl-F or cursor right\r\n"
 			DB	"Ctrl-P or cursor up, Ctrl-N or cursor down\r\n"
 			DB	"Ctrl-Y: page up, Ctrl-V: page down\r\n"
 			DB	"Ctrl-A; start of line, Ctrl-E: end of line\r\n"
+			DB	"Ctrl-L, redraw screen with current line in centre\r\n"
 			DB	"Ctrl-H goto line (enter number)\r\n"
 			DB	"\r\n"
 			DB	"Delete:\r\n"
 			DB	"Backspace: delete to left, Control-D: delete to right\r\n"
 			DB	"\r\n"
 			DB	"Cut and paste:\r\n"
-			DB	"Ctrl-K cut current line, repeaat to cut block of multiple lines\r\n"
-			DB	"Ctrl-U paste cut lines, can be repeated to paste multiple times\r\n"
+			DB	"Ctrl-K cut current line, repeat to cut block of multiple lines\r\n"
+			DB	"Ctrl-C copy current line, repeat to copy block of multiple lines\r\n"
+			DB	"Ctrl-U paste cut/copied lines, can be repeated to paste multiple times\r\n"
 			DB	"\r\n"
 			DB	"Find:\r\n"
 			DB	"Ctrl-W: find forward, Ctrl-Q: find backward\r\n"
@@ -1591,6 +1718,7 @@ load_start:		DS 3			; Start address for loading the file.
 cutbuf_lines:		DS 3			; Number of lines in cut buffer	
 load_filesize		DS 3			; Number of bytes of file loaded after CRLF normalization
 file_modified		DS 1			; Flag that tells if a file is modified.
+cut_continue		DS 1			; Flag to indicate that we want to continue cut/copy the next line and add to cut buffer.
 save_sp			DS 3			; Saved stack pointer for error return.
 ; The default Edit buffer is in the space between the end of the program and the top of the MOS command space.
 default_buf:
