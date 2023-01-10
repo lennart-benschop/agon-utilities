@@ -10,7 +10,8 @@
 			INCLUDE "mos_api.inc"
 
 			SEGMENT CODE
-			XREF	ASC_TO_NUMBER		
+			XREF	ASC_TO_NUMBER
+			XREF	UPPRC
 			XDEF	_main
 			XREF	Print_String
 			XREF	Print_CString
@@ -145,6 +146,7 @@ $$			LD 	A, (HL)
 			LD	(linebuf_scrolled), A
 			LD	(file_modified), A
 			LD	(curline_stat), A
+			LD	(findstring), A
 			CALL	Show_Screen
 			LD	BC, (start_lineno)
 			DEC	BC
@@ -206,13 +208,13 @@ main_dispatch:		; Dispatch table for all control characters/
 			DL	do_cur_down		; ^N cursor down
 			DL	do_save			; ^O write file
 			DL	do_cur_up		; ^P cursor up
-			DL	main_loop		; ^Q find backwards
-			DL	main_loop		; ^R read file
+			DL	do_rfind		; ^Q find backwards
+			DL	do_readfile		; ^R read file
 			DL	main_loop		; 
-			DL	main_loop		; ^T insert special character
+			DL	do_special		; ^T insert special character
 			DL	do_paste		; ^U paste
 			DL	do_page_down		; ^V page down
-			DL	main_loop		; ^W search forward
+			DL	do_find			; ^W search forward
 			DL	do_exit			; ^X Exit
 			DL	do_page_up		; ^Y page up
 			DL	main_loop		; 
@@ -300,8 +302,6 @@ delete_joinlines:	; About to join current and next line. First check if it is al
 			LD	(curline_length), A	; Sutract 2 fron length, effectively removing the trailing CRLF
 			LD	A, 2
 			LD	(curline_stat), A	; Mark current line as modified.
-			DEC	A
-			LD	(file_modified), A
 			CALL	Leave_Current		; Put the truncated line back into text (without its trailing CRLF)
 			LD	HL, (num_lines)
 			DEC	HL
@@ -340,6 +340,12 @@ Memory_Full:		LD 	SP, (save_sp)		; Can get here from within a subroutine, restor
 			LD 	HL, s_NOMEM
 			CALL	Print_String
 			JP	main_loop	
+			
+Load_Error		CALL 	Clear_BottomRow
+			LD 	HL, s_LOADERR
+			CALL	Print_String
+			JP	main_loop
+		
 			
 ; ENTER key, add new line after current line/split current line.
 ; Simply insert CR-LF into the current line, put the line back into the text
@@ -579,24 +585,27 @@ do_cut:			LD	A, (cut_continue)
 			LD	(cutbuf_start), HL	; Clear the old cutbuffer if not continuing.
 			LD	HL, 0
 			LD	(cutbuf_lines), HL
-			LD	HL, (cur_lineno)
-			LD	DE, (num_lines)
-			AND	A
-			SBC	HL, DE		
-			JP	Z, main_loop		; We are NOT allowed to cut the last line.
 $$:			CALL	Enter_Current
 			LD	A, (curline_length)
 			PUSH 	AF
 			XOR	A
 			LD	(curline_length), A	; Set curline_length to 0, causing Leave_Current to replace current line by emptiness,
-			INC	A
-			INC	A
-			LD	(curline_stat), A	; Mark current line as modified.
-			CALL	Leave_Current
-			LD	HL, (num_lines)
-			DEC	HL
-			LD	(num_lines), HL
-			POP 	AF			; Get original line length back.
+			CALL	Leave_NoRender		; Move current line (now of length 0) back.
+			LD	HL, (cur_lineno)
+			LD	DE, (num_lines)
+			AND	A
+			SBC	HL, DE			; Check if we are on last line
+			JR	Z, cut_lastline
+			DEC	DE
+			LD	(num_lines), DE		; Store decreased number of lines.
+			JR	cut_move
+cut_lastline:		LD	HL, (text_end)		; We have deleted the last lien, which is not allowed, put an empty line in its place.
+			LD	(HL), 13
+			INC	HL
+			LD	(HL), 10
+			INC 	HL
+			LD	(text_end), HL
+cut_move:		POP 	AF			; Get original line length back.
 			LD	(curline_length), A
 			CALL	Cutbuffer_Add		; Add the line to the cut buffer.
 			CALL	Show_Screen
@@ -648,13 +657,10 @@ do_paste1:		POP	HL
 			LD 	(curline_length), A
 			XOR 	A
 			LD	(oldcurline_length), A	; by setting oldcurline_length to 0, nothing gets overwritten, line gets inserted.
-			INC	A
-			INC	A
-			LD	(curline_stat),A	; Mark linebuf as modified
 			POP 	HL			; source address
 			LD	DE, linebuf		
 			LDIR				; Copy line of cutbuf to linebuf.
-			CALL	Leave_Current		
+			CALL	Leave_NoRender		; Cause line to be inserted in text.
 			LD	HL, (num_lines)
 			INC	HL
 			LD	(num_lines), HL
@@ -667,6 +673,227 @@ paste_end:		POP 	HL
 			CALL	Show_Screen
 			JP	main_loop
 
+; Read a file (^R) and isert it into the text.
+do_readfile:		LD	HL, (buf_end)
+			LD	(cutbuf_start), HL	; Clear the cut buffer.
+			CALL	Leave_Current
+			CALL	Clear_BottomRow
+			LD	HL, s_READFILE
+			CALL	Print_String
+			LD	HL, linebuf
+			LD	E, 1
+			LD 	BC, 40
+			MOSCALL mos_editline
+			LD 	HL, linebuf
+			LD	DE, (text_end)
+			CALL	Load_File
+			CP 	0ffh
+			JP	Z, Memory_Full
+			AND	A
+			JP	NZ, Load_Error
+			LD	HL, (text_end)
+			PUSH	HL
+do_read1:		LD	HL, (cutbuf_lines)
+			LD	A, H
+			OR 	L
+			JR	Z, paste_end		; Did cutbuf_lines reach zero?
+			DEC	HL
+			LD	(cutbuf_lines), HL	; Decrement cutbuf_lines
+			POP	HL
+			PUSH 	HL			; stack: old_lineaddr 			
+			CALL	Next_LineAddr
+			POP	DE						;
+			PUSH	HL
+			PUSH    DE			; stack: new_lineaddr old_lineaddr
+			AND	A
+			SBC	HL, DE
+			LD	BC, 0
+			LD	C, L			; Determine length of first line in inserted file
+			LD	A, L			; Length goes to BC for LDIR and to curline_length	
+			LD 	(curline_length), A
+			XOR 	A
+			LD	(oldcurline_length), A	; by setting oldcurline_length to 0, nothing gets overwritten, line gets inserted.
+			POP 	HL			; source address
+			LD	DE, linebuf		
+			LDIR				; Copy line of read file to linebuf.
+			CALL	Leave_NoRender		; Cause line to be inserted in text.
+			LD	HL, (num_lines)
+			INC	HL
+			LD	(num_lines), HL
+			LD	BC, 1
+			LD	IX, cur_lineaddr
+			CALL	Lines_Forward		; Skip past line that got just inserted.
+			JR	do_read1					
+		
+; Find forward (^W)		
+do_find:		CALL	Enter_Current
+			CALL	Leave_Current
+			CALL	Clear_BottomRow
+			LD	HL, s_FIND
+			CALL	Print_String
+			LD	HL, findstring
+			LD	E, 0
+			LD 	BC, 40
+			MOSCALL mos_editline
+			LD	HL, (cur_lineaddr)
+			LD	A, (linebuf_editpos)
+			LD	DE, 0
+			LD	E, A
+			ADD	HL, DE			; start position to find the string.
+			EXX
+			LD	HL, (cur_lineno)	
+			LD	DE, (cur_lineaddr)
+			EXX
+			LD	BC, (text_end)
+			; The following loop starts seaching just after the current cursor position and wraps around 
+			; at the start of the text file when reaching the end. It terminates when either the string is found or 
+			; the original cursor position is reached again.
+			; Register usage in the find loop:
+			; HL pointer in text.
+			; BC, text_end to compare against.
+			; DE, scratch used in compare function.
+			; HL' line number, DE' start address of current line.			
+find_loop		INC 	HL
+			AND	A
+			SBC 	HL, BC
+			JR	NC, find_notfound
+			; Reached end of text?	
+			ADD	HL, BC			; Undo the last subtract.
+			LD 	A, (HL)
+			CP 	13			; At end of line?
+			JR	NZ, $F
+			INC	HL			; Increment past CR
+			PUSH 	HL
+			EXX	
+			POP	DE			; Remember current line start
+			INC	DE
+			INC	HL			; Increment line number.
+			EXX
+			JR	find_loop
+$$:			CALL	Compare
+			JR 	NZ, find_loop			
+find_found:		PUSH 	HL			; Stack find position
+			EXX	
+			LD	IX, cur_lineaddr
+			LD	(IX+0), DE
+			LD	(IX+3), HL
+			EXX				; Set line number where string was found.
+			CALL	Adjust_Top
+			CALL	Enter_Current
+			POP	HL
+			LD	DE, (cur_lineaddr)
+			AND	A
+			SBC	HL, DE
+			LD	A, L
+			LD	(linebuf_editpos), A	; Compute editpos from find position.
+			CALL	Col_From_Editpos
+			CALL	Render_Current_Line
+			CALL 	Show_Cursor
+			JP	main_loop
+find_notfound		CALL	Clear_BottomRow
+			LD	HL, s_NOTFOUND
+			CALL	Print_String
+			CALL	Show_Cursor
+			JP	main_loop
+			
+; Find backward (^Q)
+do_rfind:		CALL	Enter_Current
+			CALL	Leave_Current
+			CALL	Clear_BottomRow
+			LD	HL, s_FIND
+			CALL	Print_String
+			LD	HL, findstring
+			LD	E, 0
+			LD 	BC, 40
+			MOSCALL mos_editline
+			LD	HL, (cur_lineaddr)
+			LD	A, (linebuf_editpos)
+			LD	DE, 0
+			LD	E, A
+			ADD	HL, DE			; start position to find the string.
+			EXX
+			LD	DE, (cur_lineno)	
+			LD	HL, (cur_lineaddr)
+			CALL	Next_LineAddr
+			INC	DE
+			EX	DE, HL
+			EXX
+			LD	BC, (buf_start)
+			; The following loop starts seaching just before the current cursor position and terminates
+			; when either the start of the text is reached (not found) or the string is found.
+			; Register usage in the find loop:
+			; HL pointer in text.
+			; BC, buf_start to compare against.
+			; DE, scratch used in compare function.
+			; HL' line number, DE' start address of current line.			
+rfind_loop		DEC 	HL
+			AND	A
+			SBC 	HL, BC
+			JR	C, find_notfound
+			; Reached start of text?	
+			ADD	HL, BC			; Undo the last subtract.
+			LD 	A, (HL)
+			CP 	10			; At end of previous line?
+			JR	NZ, $F
+			PUSH 	HL
+			DEC	HL			; decrement past LF
+			EXX	
+			POP	DE			; Remember current line start
+			INC	DE
+			DEC	HL			; Decrement line number.
+			EXX
+			JR	rfind_loop
+$$:			CALL	Compare
+			JR 	NZ, rfind_loop			
+rfind_found:		PUSH 	HL			; Stack find position
+			EXX	
+			LD	IX, cur_lineaddr
+			LD	(IX+0), DE
+			LD	(IX+3), HL
+			EXX				; Set line number where string was found.
+			LD	BC, 1
+			CALL	Lines_Backward		; But go one line back.
+			CALL	Adjust_Top
+			CALL	Enter_Current
+			POP	HL
+			LD	DE, (cur_lineaddr)
+			AND	A
+			SBC	HL, DE
+			LD	A, L
+			LD	(linebuf_editpos), A	; Compute editpos from find position.
+			CALL	Col_From_Editpos
+			CALL	Render_Current_Line
+			CALL 	Show_Cursor
+			JP	main_loop	
+			
+; Insert special character (^T). Type two hex characters.
+do_special:		CALL	Read_Key
+			CALL 	UPPRC
+			SUB	'0'
+			JP	C, main_loop
+			CP	10
+			JR	C, $F
+			SUB	7
+$$:			ADD	A		; Convert character to hex digit
+			ADD	A
+			ADD	A
+			ADD	A
+			LD	E, A		; shift first digit 4 positions to left.
+			CALL	Read_Key
+			CALL	UPPRC
+			SUB	'0'
+			JP	C, main_loop
+			CP	10
+			JR	C, $F
+			SUB	7		; convert character to hex digit
+$$			ADD	E		; Add to first digit.	
+			CP 	07Fh
+			JP	Z, main_loop	; Skip deelete
+			CP	' '
+			JP	C, main_loop
+			JP	do_ins_char
+			
+			
 ; Clear the bottom row for a prompt, reset the cursor to start of that line.
 Clear_BottomRow:	LD	A, 31
 			RST.LIL	10h
@@ -738,7 +965,14 @@ Show_Status:			; Show status line at bottom of screen
 			CALL	Print_Decimal
 			LD 	HL, s_HELP_Small
 			CALL 	Print_String
-			LD	HL, (cutbuf_lines)
+			LD	A, (file_modified)
+			AND	A
+			JR	Z, $F
+			LD	A, '*'			; Show an asterisk when file is modified.
+			RST.LIL	10h
+			LD	A, ' '
+			RST.LIL 10h
+$$:			LD	HL, (cutbuf_lines)
 			CALL	Print_Decimal
 			CALL	Clear_EOL
 			CALL	True_Video
@@ -1013,6 +1247,22 @@ Adjust_Top_Change:	; Current line is out of visible screen, adjust top line.
 			CALL	Show_Screen
 			RET
 	
+; Compare text at HL against zero terminated string in findstring.
+; Return Z if strings match, NZ otherwise.
+; Clobbers: A, DE
+Compare			PUSH 	HL
+			LD	DE, findstring
+$$:			LD	A, (DE)
+			AND	A
+			JR	Z, Compare_End	; reached the end of findstring, compare succeeded.
+			CP	(HL)
+			JR	NZ, Compare_End	; mismatch found, compare failed.
+			INC	HL
+			INC	DE
+			JR	$B
+Compare_End:		POP	HL
+			RET
+	
 ; Copy the current line to the line buffer, to be edited there.	
 Enter_Current:		LD	A, (curline_stat)
 			AND	A
@@ -1080,8 +1330,13 @@ Leave_Current:		LD 	A, (curline_stat)
 			LD	A, 0
 			LD	(curline_stat), A
 			RET	Z			; Return if line not modified.
+Leave_NoRender:		; Get here if we do know the line buffer was modified aand we do not want to render
 			; At this point we will put the line from linebuf back into the main text.
 			; curline_length can be zero, for example when deleting an empty line.
+			XOR	A
+			LD	(curline_stat), A
+			INC	A
+			LD	(file_modified), A	; Mark file as modified
 			LD	A, (oldcurline_length)	
 			LD	C, A
 			LD	A, (curline_length)
@@ -1167,7 +1422,7 @@ Leave_Moveline:		; Move the line from linebuf to text.
 			SBC	HL, BC
 			LD	(text_end), HL	
 			LD	A, (curline_length)
-			AND A
+			AND 	A
 			RET	Z		; Zero length line, so do not copy anything
 			LD	DE, (cur_lineaddr)
 			LD	HL, linebuf
@@ -1263,8 +1518,6 @@ Insert_Char:		EX	AF, AF'
 			LD	(curline_length), A
 			LD	A, 2
 			LD	(curline_stat), A
-			DEC	A
-			LD	(file_modified), A
 			RET
 
 ; Delete character in linebuf at edit position. Decrement linebuf_editpos.
@@ -1292,8 +1545,6 @@ Delete_Char:		LD	BC, 0
 			LD	(curline_length), A
 			LD	A, 2
 			LD	(curline_stat), A
-			DEC	A
-			LD	(file_modified), A
 			RET
 
 
@@ -1638,7 +1889,7 @@ s_NAME:			DB	"Editor for Agon ",0
 s_LINE			DB	"Line ",0
 s_HELP_Small:		DB	" bytes -- Esc to exit, Ctrl-G for help ",0
 
-s_HELP_Large:		DB      12, "Text editor for Agon v0,02, Copyright 2023, L.C. Benschop\r\n"
+s_HELP_Large:		DB      12, "Text editor for Agon v0,03, Copyright 2023, L.C. Benschop\r\n"
 			DB	"\r\n"
 			DB  	"Cursor movement:\r\n"	
 			DB	"Ctrl-B or cursor left, Ctrl-F or cursor right\r\n"
@@ -1667,10 +1918,13 @@ s_HELP_Large:		DB      12, "Text editor for Agon v0,02, Copyright 2023, L.C. Ben
 			DB	"Press any key to return to editor.",0
 s_ASKSAVE		DB	"Save file (Y/n) \r\n",0
 s_FILENAME:		DB	"Save file name: ",0
+s_READFILE		DB	"Read file name: ",0
+s_LOADERR		DB	"Error loading file.",0
 s_SAVEERR		DB	"Error saving file, retry? (Y/n)\r\n",0	
 s_BAKSFX		DB	".bak",0
 s_GOTO			DB	"Goto line: ",0
 s_FIND:			DB	"Find: ",0
+s_NOTFOUND		DB	"Not found!",0	
 s_LINETOOLONG		DB	"Line too long!",0
 s_NOMEM			DB	"Buffer full!",0
 ; RAM; 
