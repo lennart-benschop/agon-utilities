@@ -101,7 +101,7 @@ Inverse_Video:		LD 	HL, c_INVVID
 True_Video:		LD 	HL, c_TRUEVID
 			JR 	Print_CString
 
-; Put VDU in 80 column mode, of not alreaduy there.
+; Put VDU in 80 column mode, of not already there.
 Setup_Screen:		PUSH 	IX
 			MOSCALL mos_sysvars
 			RES 	4, (IX+sysvar_vpd_pflags)	; Clear mode flag
@@ -109,22 +109,23 @@ Setup_Screen:		PUSH 	IX
 			CALL	Print_CString  		; Get screen mode parameters.
 $$:			BIT	4, (IX+sysvar_vpd_pflags)			
 			JR 	Z, $B		        ; Wait until received.	
-			LD	A, (IX+sysvar_scrrows)
+			LD	A, (IX+sysvar_scrRows)
 			LD	(Saved_Rows),A
-			CP	60
-			JR	Z, Setup_End		; Apparently mode 0, do not switch
+			LD	A, (IX+sysvar_scrCols)
+			CP	80
+			JR	NC, Setup_End		; Apparently mode 3 or 0, do not switch
 			LD	A, 22
 			RST.LIL 10h
-			LD	A, 0
-			RST.LIL 10h			; Enter Mode 0
+			LD	A, 3
+			RST.LIL 10h			; Enter Mode 3
 Setup_End:		RES 	4, (IX+sysvar_vpd_pflags)	; Clear mode flag
 			LD 	HL, c_GETMODE
 			CALL	Print_CString  		; Get screen mode parameters.
 $$:			BIT	4, (IX+sysvar_vpd_pflags)			
 			JR 	Z, $B		        ; Wait until received.	
-			LD	A, (IX+sysvar_scrrows)
+			LD	A, (IX+sysvar_scrRows)
 			LD	(Current_Rows),A
-			LD	A, (IX+sysvar_scrcols)
+			LD	A, (IX+sysvar_scrCols)
 			LD	(Current_Cols),A			
 			POP	IX
 			RET
@@ -183,12 +184,12 @@ $$:			LD	A, ' '
 
 s_CRLF:			DB	13,10,0
 
-c_INVVID:		DB	10
-			DB 	17, 0, 0, 0, 0 		; Forgeground black
-			DB	17, 1, 255, 255, 255	; Background white
-c_TRUEVID:		DB	10
-			DB	17, 0, 255, 255, 255 	; Foreground white
-			DB	17, 1, 0, 0, 0		; Background black
+c_INVVID:		DB	4
+			DB 	17, 0 		; Forgeground black
+			DB	17, 143		; Background white
+c_TRUEVID:		DB	4
+			DB	17, 15		; Foreground white
+			DB	17, 128		; Background black
 c_GETMODE               DB	3, 23,0,6		; Get screen mode parameters.			
 ; RAM
 ; 

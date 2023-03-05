@@ -3,6 +3,7 @@
 ; Author:	Lennart Benschop
 ; Created:	02/01/2023
 ; Modified	06/01/2023 version 0.01 basic edit functions working.
+;               05/03/2023 version 0.04 Adapted to new VDP codes./
 
 			.ASSUME	ADL = 1			
 
@@ -1889,7 +1890,7 @@ s_NAME:			DB	"Editor for Agon ",0
 s_LINE			DB	"Line ",0
 s_HELP_Small:		DB	" bytes -- Esc to exit, Ctrl-G for help ",0
 
-s_HELP_Large:		DB      12, "Text editor for Agon v0,03, Copyright 2023, L.C. Benschop\r\n"
+s_HELP_Large:		DB      12, "Text editor for Agon v0.04, Copyright 2023, L.C. Benschop\r\n"
 			DB	"\r\n"
 			DB  	"Cursor movement:\r\n"	
 			DB	"Ctrl-B or cursor left, Ctrl-F or cursor right\r\n"

@@ -131,12 +131,12 @@ PRSTR:			LD	A,(HL)
 do_advance:		LD 	A, (current_col)
 			INC	A
 			LD	(current_col), A
-			CP 	(IX+sysvar_scrcols)	; Are we at the end of the screen line?
+			CP 	(IX+sysvar_scrCols)	; Are we at the end of the screen line?
 			JR	Z, do_newline			
 			RET
 ; Do a newline, if rews-1 lines were printe since last pause, do a pause.			
 do_newline:		LD	A, (current_col)
-			CP	(IX+sysvar_scrcols)
+			CP	(IX+sysvar_scrCols)
 			JR	Z, nl_nocrlf		; Skip printing the newline if cursor has advanced to last screen position.
 			LD	A, 13
 			RST.LIL 10h
@@ -148,7 +148,7 @@ nl_nocrlf:		XOR 	A
 			INC 	A
 			LD	(num_lines),A
 			INC	A
-			CP	(IX+sysvar_scrrows)
+			CP	(IX+sysvar_scrRows)
 			RET	NZ			; Do we need a pause?
 			XOR 	A
 			LD	(num_lines), A		; Clear line counter
@@ -176,12 +176,12 @@ do_quit:		LD	HL, c_CLEAR
 ;
 s_ERROR_SRC:		DB 	" Cannot open source file\n\r", 0
 s_USAGE:		DB	" Usage: more <txtfile>\n\r", 0                                 
-c_MORE:			DB  	28 ;String length
-			DB	17, 0, 0, 0, 0 ; foregrond black
-			DB 	17,  1, 255,255,255 ; background white
+c_MORE:			DB  	16 ;String length
+			DB	17, 0  ;foregrond black
+			DB 	17, 143 ; background white
 			DB      "--More--"
-			DB 	17, 0, 255,255,255 ; foreground white
-			DB	17, 1, 0, 0, 0 ; background black
+			DB 	17, 15 ; foreground white
+			DB	17, 128 ; background black
 c_CLEAR			DB      10,13,32,32,32,32,32,32,32,32,13 ; Clear the --More-- output
 c_GETMODE               DB	3, 23,0,6	; Get screen mode parameters.
 

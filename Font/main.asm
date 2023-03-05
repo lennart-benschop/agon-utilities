@@ -40,7 +40,7 @@ main_usage:
 			RET
 main1:			LD 	HL, (IX+3)		; source file name
 			LD	DE, font_buf
-			LD	BC, 2048
+			LD	BC, 4096
 			MOSCALL mos_load
 			OR	A
 			JR	Z, main2
@@ -52,21 +52,43 @@ main1:			LD 	HL, (IX+3)		; source file name
 			LD	L, A			
 			RET
 main2:			; Font file loaded, now try to get them into VDP. We will also write char 127, but it cannot be shown.
-			LD C, 32
-			LD HL, font_buf + 32*8 ; Start at space.
-main_fontloop:		LD A, 23
+			MOSCALL mos_sysvars
+			RES     4,(IX+sysvar_vpd_pflags)
+			LD 	A, 23
+			RST.L   10h
+			LD 	A, 0
+			RST.L   10h
+			LD	A, 6
+			RST.L   10h			; Get the screen parameters.
+$$:			BIT     4,(IX+sysvar_vpd_pflags)
+			JR      Z, $B	
+			LD	E, 8	; Assume font hhas 8 rows
+			LD	A, (IX+sysvar_scrRows)
+			ADD	A, A
+			LD	D, A
+			LD	A, (IX+sysvar_scrCols)
+			CP	D
+			JR 	C, $F
+			LD	E,  16	; If 2 * rows < cols then assunm font height = 16.
+$$:			LD	C, 32
+			LD 	HL, font_buf + 32*8 ; Start at space.
+			LD 	A, E
+			CP 	16
+			JR 	NZ, main_fontloop
+			LD 	HL, font_buf + 32*16 ; Start ad space for 8x16 font.
+main_fontloop:		LD 	A, 23
 			RST.LIL 10h		; VDU 23 
-			LD A, C
+			LD 	A, C
 			RST.LIL 10h		; followed by character code.
-			LD B, 8
-$$:			LD A, (HL)
-			RST.LIL 10h		; followd by 8 bitmap bytes from font.
-			INC HL
-			DJNZ $B			
-			INC C
-			LD A, C
-			AND A
-			JR NZ, main_fontloop	; End loop if encremented to 0
+			LD 	B, E
+$$:			LD 	A, (HL)
+			RST.LIL 10h		; followd by 8/16 bitmap bytes from font.
+			INC 	HL
+			DJNZ 	$B			
+			INC 	C
+			LD 	A, C
+			AND	A
+			JR 	NZ, main_fontloop	; End loop if encremented to 0
 			; Font is now loaded into VDP. 
 			LD A, (will_show)
 			AND A
@@ -117,5 +139,5 @@ c_MORE:			DB  	28 ;String length
 			SEGMENT LORAM
 
 will_show:		DS 	1
-font_buf:		DS 	2048
+font_buf:		DS 	4096
 			
