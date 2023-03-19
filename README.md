@@ -8,16 +8,7 @@ Parts of the code are based on the repository https://github.com/breakintoprogra
 The projects are built with Zilog ZDS-II and binaries are provided, that you can put in the `/mos` directory
 of the SD-card.
 
-### copy
-
-The copy command can copy a single file. By default the command is limited to A file up to about 31kB, as it has to store the file instead the area
-reserved for MOS commands. However, a third parameter can specify a buffer address and then the program can use a buffer at the specified address, extending
-until the start of the MOS area. For example specifying &80000 will allow the area &80000-&AFFFF as a file buffer. The program has to store the entire
-file in a single buffer due to limitations of the API calls in MOS v1.02.
-
-Example command line: `copy file1.bin file2.bin`
-
-Example command line specifying buffer: `copy file1.bin file2.bin &80000`
+Note: the copy utility has been removed because it is now an internal command in MOS.
 
 ### comp
 

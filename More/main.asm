@@ -154,10 +154,9 @@ nl_nocrlf:		XOR 	A
 			LD	(num_lines), A		; Clear line counter
 			LD 	HL, c_MORE
 			CALL 	PRCNTSTR		; Print More message
-$$:			LD      A, (IX+sysvar_keycode)
+$$:			MOSCALL mos_getkey
 			AND 	A
-			JR	Z, $B			; Do this instead of MOSCALL mos_getkey because it has a race condition.
-			LD	(IX+sysvar_keycode), 0
+			JR	Z, $B			
 			CP	'Q'
 			JR	Z, do_quit
 			CP	'q'

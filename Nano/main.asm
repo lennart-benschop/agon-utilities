@@ -1851,31 +1851,43 @@ Save_End:		XOR	A
 Read_Key:		PUSH	IX
 			PUSH 	BC
 			MOSCALL mos_sysvars
-$$:			LD      A, (IX+sysvar_keycode)
-			AND 	A
-			JR	Z, $B			; Do this instead of MOSCALL mos_getkey because it has a race condition.
-			LD	C, (IX+sysvar_keymods)
-			LD	(IX+sysvar_keycode), 0
-			; We want to use certain control keys separate from the cursor keys.
-			; In this routine I translate the cursor keys to different control codes, which match the nano key bindings.
-			; But we could translate them to codes outside the contol char range (for example 136..139)
-			LD	B, 2			; Want to translate cursor left into ^B
-			CP	8 			; Is it cursor left or control H?
-			JR 	Z, Key_Translate		
-			LD	B, 6			; Want to translate cursor right into ^F 
-			CP	21			; Is it cursor right or control U?		
+Read_Key1		MOSCALL mos_getkey
+			LD      B,   A                  ; Store returned ASCII code.
+			LD      A, (IX+sysvar_vkeycode)
+			LD      C, 2			; Want to translate cursor-left to ^B
+			CP	154			
 			JR	Z, Key_Translate
-			LD	B, 16			; Want to translate cursor up into ^P
-			CP	11			; Is it cursor up or control K?
-			JR	Z, Key_Translate	
-			LD	B, 14			; Want to translate cursor down into ^N
-			CP	10			; Is it cursor down or control J?
-			JR	Z, Key_Translate
-			JR 	Key_End	
-Key_Translate		BIT	0, C			; Test the control modifier bit.		
-			JR 	NZ, Key_End		; IF the bit is set (NZ), do not translate
-			LD	A, B			; key without the control modifier bit, assume cursor key, translate to desired value.
-Key_End			POP	BC
+			LD	C, 6                    ; Want to translate cursor-right to ^F
+			CP	156                      
+			JR	Z, Key_Translate            
+			LD	C, 16			 ; Want to translate cursor-up to ^P
+			CP      150
+			JR	Z, Key_Translate            
+			LD	C, 14			 ; Want to translate cursor-down to ^N
+			CP      152
+			JR	Z, Key_Translate            
+			LD	C, 1			 ; Want to translate Home to ^A
+			CP      133
+			JR	Z, Key_Translate            
+			LD	C, 5			 ; Want to translate End to ^E
+			CP      135
+			JR	Z, Key_Translate            
+			LD	C, 25			 ; Want to translate Page-Up to ^Y
+			CP      146
+			JR	Z, Key_Translate            
+			LD	C, 22			 ; Want to translate Page-Down to ^V
+			CP      148
+			JR	Z, Key_Translate            
+			LD	C, 4			 ; Want to translate Delete to ^D
+			CP      130
+			JR	Z, Key_Translate            
+			; None of the special keys.
+			LD	A, B                     ; Used the saved 'ascii' value/
+			OR      A
+			JR 	Z, Read_Key1             ; Is 'ascii' code 0?
+			JR	Key_End
+Key_Translate:		LD	A, C
+Key_End:		POP	BC
 			POP 	IX
 			RET
 
