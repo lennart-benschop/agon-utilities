@@ -160,7 +160,7 @@ Clear_EOL:		PUSH 	IX
 			RST.LIL 10h
 			XOR	A
 			RST.LIL 10h
-			LD	A, 2
+			LD	A, vdp_cursor
 			RST.LIL 10h	; Ask the VDP to send cursor position.
 $$:			BIT	0, (IX+sysvar_vpd_pflags)
 			JR	Z, $B	; Wait for result.
@@ -190,7 +190,7 @@ c_INVVID:		DB	4
 c_TRUEVID:		DB	4
 			DB	17, 15		; Foreground white
 			DB	17, 128		; Background black
-c_GETMODE               DB	3, 23,0,6		; Get screen mode parameters.			
+c_GETMODE               DB	4, 15,23,0,vdp_mode		; Get screen mode parameters. Switch off paged mode.			
 ; RAM
 ; 
 			DEFINE	LORAM, SPACE = ROM

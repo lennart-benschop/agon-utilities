@@ -58,7 +58,7 @@ main2:			; Font file loaded, now try to get them into VDP. We will also write ch
 			RST.L   10h
 			LD 	A, 0
 			RST.L   10h
-			LD	A, 6
+			LD	A, vdp_mode
 			RST.L   10h			; Get the screen parameters.
 $$:			BIT     4,(IX+sysvar_vpd_pflags)
 			JR      Z, $B	

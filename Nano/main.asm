@@ -1887,7 +1887,11 @@ Read_Key1		MOSCALL mos_getkey
 			JR 	Z, Read_Key1             ; Is 'ascii' code 0?
 			JR	Key_End
 Key_Translate:		LD	A, C
-Key_End:		POP	BC
+Key_End:		PUSH    AF
+			LD	A, 15			  ; Switch off paged mode, in case we pressed ^N
+			RST.L   10h
+			POP     AF  
+			POP	BC
 			POP 	IX
 			RET
 
@@ -1902,7 +1906,7 @@ s_NAME:			DB	"Editor for Agon ",0
 s_LINE			DB	"Line ",0
 s_HELP_Small:		DB	" bytes -- Esc to exit, Ctrl-G for help ",0
 
-s_HELP_Large:		DB      12, "Text editor for Agon v0.04, Copyright 2023, L.C. Benschop\r\n"
+s_HELP_Large:		DB      12, "Text editor for Agon v0.05, Copyright 2023, L.C. Benschop\r\n"
 			DB	"\r\n"
 			DB  	"Cursor movement:\r\n"	
 			DB	"Ctrl-B or cursor left, Ctrl-F or cursor right\r\n"

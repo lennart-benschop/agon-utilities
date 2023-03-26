@@ -182,7 +182,7 @@ c_MORE:			DB  	16 ;String length
 			DB 	17, 15 ; foreground white
 			DB	17, 128 ; background black
 c_CLEAR			DB      10,13,32,32,32,32,32,32,32,32,13 ; Clear the --More-- output
-c_GETMODE               DB	3, 23,0,6	; Get screen mode parameters.
+c_GETMODE               DB	4, 15, 23,0,vdp_mode	; Get screen mode parameters. Also switch off paged mode.
 
 current_col:		DS	1			; Current column on the screen.
 num_lines:		DS 	1			; Number of lines printed since last pause
