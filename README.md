@@ -20,13 +20,13 @@ Example command line: `comp file1.bin file2.bin`
 ### more
 
 The well-known utility from early Unix and also MS-DOS. MOS does not support pipelines, so you cannot pipe the output of the CAT command to it. It can just show
-a single file and pauses after s screenful has been shown. It reads the screen widt and height, so it works well in all three screen modes.
+a single file and pauses after a screenful has been shown. It reads the screen width and height, so it works well in all three screen modes.
 
 Example command line: `more file.txt`
 
 ### memfill
 
-Can be useful to clean the contents of RAM, so you see immediatley which memory areas have been touched by your program. memdump is already there in a different respository.
+Can be useful to clean the contents of RAM, so you see immediately which memory areas have been touched by your program. memdump is already there in a different respository.
 
 Example command line: `memfill &80000 &10000 &ff`
 
