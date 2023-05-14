@@ -149,19 +149,9 @@ main_close_all		POP DE
 ; output:	HL = nof bytes actually read, less than max (possibly 0) if EOF.
 ;		There should be a MOS API function to do this, but currently not implemented
 read_block:		PUSH 	DE			; Store original max size
-$$			MOSCALL mos_feof			
-			CP 	A,1
-			JR	Z, read_end
-			MOSCALL mos_fgetc
-			LD	(HL),A
-			INC 	HL
-			DEC	DE
-			LD	A, E
-			OR	D
-			JR 	NZ, $B
-read_end:		POP	HL			; Original Max size.
-			AND	A
-			SBC	HL, DE
+			MOSCALL mos_fread
+			EX	DE, HL		
+			POP	DE
 			RET	
 			
 ; comp_blocks.
