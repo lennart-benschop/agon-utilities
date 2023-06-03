@@ -1622,12 +1622,17 @@ Load_File:		PUSH 	HL
 			; Load file
 			POP	BC
 			LD	DE, (load_start)
-			POP	HL		
-			MOSCALL	mos_load
-			CP	A, 4
-			JR	Z, Load_Empty	; File not found, return just an empty buffer.
-			AND	A
-			JR	NZ, Load_Fatal
+			POP	HL
+			PUSH    BC
+			LD 	C,fa_read
+			MOSCALL	mos_fopen
+			EX	DE, HL
+			POP	DE
+			LD	C, A
+			AND 	A 
+			JR	Z, Load_Empty	; File not found, return just an empty buffer.			
+			MOSCALL mos_fread
+			MOSCALL mos_fclose
 			; scan from top of buffer down to find the text and move it to the end of buffer.
 			; doing all translation (LF to CR-LF, remove control chars) on-the fly. Count lines.
 			; Also ensure that no lines are >255 chars including CR-LF by inserting extra line endings.
@@ -1906,7 +1911,7 @@ s_NAME:			DB	"Editor for Agon ",0
 s_LINE			DB	"Line ",0
 s_HELP_Small:		DB	" bytes -- Esc to exit, Ctrl-G for help ",0
 
-s_HELP_Large:		DB      12, "Text editor for Agon v0.05, Copyright 2023, L.C. Benschop\r\n"
+s_HELP_Large:		DB      12, "Text editor for Agon v0.06, Copyright 2023, L.C. Benschop\r\n"
 			DB	"\r\n"
 			DB  	"Cursor movement:\r\n"	
 			DB	"Ctrl-B or cursor left, Ctrl-F or cursor right\r\n"

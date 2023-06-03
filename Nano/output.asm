@@ -190,7 +190,7 @@ c_INVVID:		DB	4
 c_TRUEVID:		DB	4
 			DB	17, 15		; Foreground white
 			DB	17, 128		; Background black
-c_GETMODE               DB	4, 15,23,0,vdp_mode		; Get screen mode parameters. Switch off paged mode.			
+c_GETMODE               DB	5, 15,26,23,0,vdp_mode		; Get screen mode parameters. Switch off paged mode, cancels text window.			
 ; RAM
 ; 
 			DEFINE	LORAM, SPACE = ROM
