@@ -41,9 +41,11 @@ Example command that shows the font just loaded:
 
 `font /fonts/latin1-8.bin show`
 
-Two fonts are included: 
-- `bbcasc-8.bin` is the binary version of the font loaded on bootup by the vdp. It was derived from the file `agon_font.h`
+Three fonts are included: 
+- `bbcasc-8.bin` is the binary version of the font loaded on bootup by the vdp-1.02. It was derived from the file `agon_font.h`
  in the VDP project. It contains only ASCII characters with the pounds sign at position 0x60.
+- `bbclat-8.bin` is the binary version of the font loaded on bootup by the vdp-1.04 or 2.x. It was derived from the file `agon_font.h`
+ in the VDP project. It contains a complete CP-1252 character set.
 - `latin1-8.bin` is an ISO 8859-1 font (Latin1) that I derived from the following github project. The font provided had
  the bytes bit-reversed compared to what we need, so I changed it to the right format. It does not look pretty, but it's a start.
 https://github.com/dhepper/font8x8

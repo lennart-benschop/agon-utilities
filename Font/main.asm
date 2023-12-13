@@ -62,20 +62,9 @@ main2:			; Font file loaded, now try to get them into VDP. We will also write ch
 			RST.L   10h			; Get the screen parameters.
 $$:			BIT     4,(IX+sysvar_vpd_pflags)
 			JR      Z, $B	
-			LD	E, 8	; Assume font hhas 8 rows
-			LD	A, (IX+sysvar_scrRows)
-			ADD	A, A
-			LD	D, A
-			LD	A, (IX+sysvar_scrCols)
-			CP	D
-			JR 	C, $F
-			LD	E,  16	; If 2 * rows < cols then assunm font height = 16.
+			LD	E, 8	; Assume font hhas 8 rows, always
 $$:			LD	C, 32
 			LD 	HL, font_buf + 32*8 ; Start at space.
-			LD 	A, E
-			CP 	16
-			JR 	NZ, main_fontloop
-			LD 	HL, font_buf + 32*16 ; Start ad space for 8x16 font.
 main_fontloop:		LD 	A, 23
 			RST.LIL 10h		; VDU 23 
 			LD 	A, C
