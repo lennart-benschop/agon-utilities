@@ -5,8 +5,10 @@ These are small utilities that everybody has taken for granted on UNIX, but even
 The project will include an editor some day. All are MOS commands, all are written in Assembly language and all run in 24-bit ADL mode.
 Parts of the code are based on the repository https://github.com/breakintoprogram/agon-projects
 
-The projects are built with Zilog ZDS-II and binaries are provided, that you can put in the `/mos` directory
-of the SD-card.
+The projects are built with ez80asm
+(https://github.com/envenomator/agon-ez80asm). Under Linux,
+make sure to have ez80asm in your path and you can just run make to
+build the utilities.
 
 Note: the copy utility has been removed because it is now an internal command in MOS.
 
