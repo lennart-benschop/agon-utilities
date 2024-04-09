@@ -3,27 +3,7 @@
 ; Author:	Lennart Benschop
 ; Created:	27/12/2022
 ;
-
-			.ASSUME	ADL = 1			
-
-			INCLUDE	"equs.inc"
-			INCLUDE "mos_api.inc"
-
-			SEGMENT CODE
-			
-			XDEF	Print_String
-			XDEF	Print_CString
-			XDEF	Print_Decimal
-			XDEF	Print_CRLF
-			XDEF	Setup_Screen
-			XDEF	Restore_Screen
-			XDEF	Inverse_Video
-			XDEF	True_Video
-			XDEF	Clear_EOL
-			
-			XREF	Saved_Rows
-			XREF	Current_Rows
-			XREF	Current_Cols
+; Modified:     09/04/2024 Adapted to ez80asm
 
 Print_Decimal:	
 ; Print a decimal number (less than 1000000)';
@@ -36,18 +16,18 @@ Print_Decimal:
 			LD	B, 6		; Consider 6 digits
 			LD	C, 6		; Leading zero counter, reaches 1 if sixth digit sill 0.		; 
 Print_Dec1:		LD	DE, (IY+0) 	; Take next power of 10.
-			LEA	IY, IY+4
+			LEA	IY, IY+3
 			LD	A, '0'-1
-$$:			INC	A
+@@:			INC	A
 			AND 	A	
 			SBC 	HL, DE		; Repeatedly subtract power of 10 until carry
-			JR	NC, $B
+			JR	NC, @B
 			ADD	HL, DE		; Undo the last subtract that caused carry					
 			CP	'0'
-			JR	NZ, $F		; Don't print leading zero			
+			JR	NZ, @F		; Don't print leading zero			
 			DEC	C	
 			JR	NZ, Print_Dec2	; But do print 0 if it's the units digit.
-$$:			RST.LIL	10h
+@@:			RST.LIL	10h
 			LD	C, 1		; Make sure the next digit will be printed.
 Print_Dec2:		DJNZ	Print_Dec1
 			POP 	BC
@@ -55,7 +35,7 @@ Print_Dec2:		DJNZ	Print_Dec1
 			POP	IY
 			RET
 
-Num_Table		DL	100000
+Num_Table:		DL	100000
 			DL	10000
 			DL	1000
 			DL	100
@@ -72,10 +52,10 @@ Print_CString:          PUSH	BC
 			CP	B
 			JR	Z, Print_CString_End
 			INC 	HL
-$$:			LD 	A, (HL)
+@@:			LD 	A, (HL)
 			RST.LIL 10h
 			INC 	HL
-			DJNZ 	$B	
+			DJNZ 	@B	
 Print_CString_End:	POP	BC	
 			RET	
 			
@@ -85,7 +65,7 @@ Print_CRLF:		LD	HL, s_CRLF
 ; Parameters:
 ;  HL: Address of string (24-bit pointer)
 ;
-Print_String		LD	A,(HL)
+Print_String:		LD	A,(HL)
 			OR	A
 			RET	Z
 			RST.LIL	10h
@@ -107,8 +87,8 @@ Setup_Screen:		PUSH 	IX
 			RES 	4, (IX+sysvar_vpd_pflags)	; Clear mode flag
 			LD 	HL, c_GETMODE
 			CALL	Print_CString  		; Get screen mode parameters.
-$$:			BIT	4, (IX+sysvar_vpd_pflags)			
-			JR 	Z, $B		        ; Wait until received.	
+@@:			BIT	4, (IX+sysvar_vpd_pflags)			
+			JR 	Z, @B		        ; Wait until received.	
 			LD	A, (IX+sysvar_scrRows)
 			LD	(Saved_Rows),A
 			LD	A, (IX+sysvar_scrCols)
@@ -121,8 +101,8 @@ $$:			BIT	4, (IX+sysvar_vpd_pflags)
 Setup_End:		RES 	4, (IX+sysvar_vpd_pflags)	; Clear mode flag
 			LD 	HL, c_GETMODE
 			CALL	Print_CString  		; Get screen mode parameters.
-$$:			BIT	4, (IX+sysvar_vpd_pflags)			
-			JR 	Z, $B		        ; Wait until received.	
+@@:			BIT	4, (IX+sysvar_vpd_pflags)			
+			JR 	Z, @B		        ; Wait until received.	
 			LD	A, (IX+sysvar_scrRows)
 			LD	(Current_Rows),A
 			LD	A, (IX+sysvar_scrCols)
@@ -135,14 +115,14 @@ Restore_Screen:		LD	A, (Saved_Rows)
 			CP	60
 			RET	Z			; Do nothing if we were already in mode 0
 			CP	25
-			JR 	NZ, $F
+			JR 	NZ, @F
 			LD	L, 2
 			JR	Restore1
-$$:			CP	48
-			JR	NZ, $F
+@@:			CP	48
+			JR	NZ, @F
 			LD	L, 1
 			JR	Restore1
-$$:			RET				; We do not know about other modes, so please return.
+@@:			RET				; We do not know about other modes, so please return.
 Restore1:		LD	A, 22
 			RST.LIL 10h
 			LD 	A, L
@@ -162,22 +142,22 @@ Clear_EOL:		PUSH 	IX
 			RST.LIL 10h
 			LD	A, vdp_cursor
 			RST.LIL 10h	; Ask the VDP to send cursor position.
-$$:			BIT	0, (IX+sysvar_vpd_pflags)
-			JR	Z, $B	; Wait for result.
+@@:			BIT	0, (IX+sysvar_vpd_pflags)
+			JR	Z, @B	; Wait for result.
 			LD	A, (Current_Cols)
 			LD	B, A	; Number of columns to B
 			LD	A, (Current_Rows)
 			DEC	A
 			CP	(IX+sysvar_cursorY)
-			JR	NZ, $F	; Are we on bottom row?
+			JR	NZ, @F	; Are we on bottom row?
 			DEC	B	; Then only fill out up to last column, do not write a space there.
-$$:			LD	A, (IX+sysvar_cursorX)
+@@:			LD	A, (IX+sysvar_cursorX)
 			SUB	B
 			NEG	
 			LD	B, A	; B contains desired column position - current cursor.
-$$:			LD	A, ' '
+@@:			LD	A, ' '
 			RST.LIL	10h
-			DJNZ	$B	
+			DJNZ	@B	
 			POP	BC
 			POP 	IX
 			RET
@@ -190,9 +170,6 @@ c_INVVID:		DB	4
 c_TRUEVID:		DB	4
 			DB	17, 15		; Foreground white
 			DB	17, 128		; Background black
-c_GETMODE               DB	5, 15,26,23,0,vdp_mode		; Get screen mode parameters. Switch off paged mode, cancels text window.			
+c_GETMODE:  		DB	5, 15,26,23,0,vdp_mode		; Get screen mode parameters. Switch off paged mode, cancels text window.			
 ; RAM
 ; 
-			DEFINE	LORAM, SPACE = ROM
-			SEGMENT LORAM
-			

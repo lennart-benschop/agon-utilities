@@ -5,16 +5,7 @@
 ; Last Updated:	15/11/2022
 ; Last Updated: 29/12/2022 Lennart Benchop adapt for 24-bit mode.
 ; Modinfo:
-
-			INCLUDE	"equs.inc"
-			
-			.ASSUME	ADL = 1
-
-			SEGMENT CODE
-				
-			XDEF	ASC_TO_NUMBER
-			XDEF	SKIPSP
-			XDEF 	UPPRC
+; 2024/04/08    Adapt for ez80asm
 				
 ; Read a number and convert to binary
 ; If prefixed with &, will read as hex, otherwise decimal
@@ -26,7 +17,7 @@
 ; Destroys: A,D,E,H,L,F
 ;
 ASC_TO_NUMBER:		LD		DE, 0			; Initialise DE
-			CALL		SKIPSP			; Skip whitespace
+			CALL		_skip_spaces		; Skip whitespace
 			LD		A, (HL)			; Read first character
 			OR		A			; Check for end of string
 			RET		Z			; Return with no carry if not
@@ -89,14 +80,6 @@ ASC_TO_NUMBER4:		POP		BC
 			SCF					; We have a valid number so set carry
 			RET
 
-; Skip a space
-; HL: Pointer in string buffer
-; 
-SKIPSP:			LD		A, (HL)
-			CP      	' '
-			RET     	NZ
-			INC		HL
-			JR      	SKIPSP
 
 ; Convert a character to upper case
 ;  A: Character to convert
