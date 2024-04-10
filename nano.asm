@@ -940,7 +940,7 @@ Show_Status:			; Show status line at bottom of screen
 			RST.LIL 10h
 			LD	HL, (num_lines)
 			CALL	Print_Decimal
-			LD 	A, $2c ; Commaa
+			LD 	A, ','
 			RST.LIL 10h
 			LD 	A, ' '
 			RST.LIL 10h			
@@ -1944,7 +1944,8 @@ s_LINETOOLONG:		DB	"Line too long!",0
 s_NOMEM:		DB	"Buffer full!",0
 ; RAM variables
 
-Saved_Rows:		DS	1		; Rows of video mode in which editor started, so we can return to that mode.	
+Saved_Mode:		DS	1		; video mode in which editor started, so we can return to that mode.
+Current_Mode:           DS      1               ; Current video mode.
 Current_Rows:		DS 	1		; Number of rows in current video mode
 Current_Cols:		DS	1		; Number of columns in current video mode.
 filename:		DS 	256		; Name of file being edited.		

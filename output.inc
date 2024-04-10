@@ -83,21 +83,26 @@ True_Video:		LD 	HL, c_TRUEVID
 
 ; Put VDU in 80 column mode, of not already there.
 Setup_Screen:		PUSH 	IX
+			LD 	HL, c_FIXSETTINGS
+			CALL	Print_CString		; Cancel text window control keys, page mode	
 			MOSCALL mos_sysvars
 			RES 	4, (IX+sysvar_vpd_pflags)	; Clear mode flag
 			LD 	HL, c_GETMODE
 			CALL	Print_CString  		; Get screen mode parameters.
 @@:			BIT	4, (IX+sysvar_vpd_pflags)			
 			JR 	Z, @B		        ; Wait until received.	
-			LD	A, (IX+sysvar_scrRows)
-			LD	(Saved_Rows),A
+			LD	A, (IX+sysvar_scrMode)
+			LD	(Saved_Mode),A
 			LD	A, (IX+sysvar_scrCols)
 			CP	80
-			JR	NC, Setup_End		; Apparently mode 3 or 0, do not switch
+			JR	NC, Setup_End		; We have a mode with at least 80 columns, keep that.
 			LD	A, 22
 			RST.LIL 10h
 			LD	A, 3
-			RST.LIL 10h			; Enter Mode 3
+			RST.LIL 10h			; Enter Mode 3 (80x30)
+			LD	A,(IX+0)
+@@:			CP	(IX+0)
+			JR	Z, @B			; Wait for VBLANK
 Setup_End:		RES 	4, (IX+sysvar_vpd_pflags)	; Clear mode flag
 			LD 	HL, c_GETMODE
 			CALL	Print_CString  		; Get screen mode parameters.
@@ -106,24 +111,22 @@ Setup_End:		RES 	4, (IX+sysvar_vpd_pflags)	; Clear mode flag
 			LD	A, (IX+sysvar_scrRows)
 			LD	(Current_Rows),A
 			LD	A, (IX+sysvar_scrCols)
-			LD	(Current_Cols),A			
+			LD	(Current_Cols),A
+			LD 	A, (IX+sysvar_scrMode)
+			LD      (Current_Mode),A
 			POP	IX
 			RET
 			
 ; Restore original video mode.
-Restore_Screen:		LD	A, (Saved_Rows)
-			CP	60
-			RET	Z			; Do nothing if we were already in mode 0
-			CP	25
-			JR 	NZ, @F
-			LD	L, 2
-			JR	Restore1
-@@:			CP	48
-			JR	NZ, @F
-			LD	L, 1
-			JR	Restore1
-@@:			RET				; We do not know about other modes, so please return.
-Restore1:		LD	A, 22
+Restore_Screen:	   	LD 	HL, c_ENABLECTRL        ; Re-enable control keys
+			CALL	Print_CString
+
+			LD	A, (Saved_Mode)
+			LD      L, A
+			LD 	A, (Current_Mode)
+			CP      L
+			RET	Z			; Do nothing if we had not changed modes.
+			LD 	A, 22
 			RST.LIL 10h
 			LD 	A, L
 			RST.LIL 10h
@@ -170,6 +173,8 @@ c_INVVID:		DB	4
 c_TRUEVID:		DB	4
 			DB	17, 15		; Foreground white
 			DB	17, 128		; Background black
-c_GETMODE:  		DB	5, 15,26,23,0,vdp_mode		; Get screen mode parameters. Switch off paged mode, cancels text window.			
+c_FIXSETTINGS:		DB	6, 23,0,$98,0,15,26 ; Switch off control keys, cancel page mode, text window.
+c_ENABLECTRL:		DB	4, 23,0,$98,1       ; Switch on control keys    
+c_GETMODE:  		DB	3, 23,0,vdp_mode		; Get screen mode parameters. Switch off paged mode, cancels text window.			
 ; RAM
 ; 

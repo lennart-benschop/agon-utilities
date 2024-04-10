@@ -2,7 +2,7 @@
 ; Title:	AGON MOS - API for user projects
 ; Author:	Dean Belfield
 ; Created:	03/08/2022
-; Last Updated:	15/04/2023
+; Last Updated:	11/11/2023
 ;
 ; Modinfo:
 ; 05/08/2022:	Added mos_feof
@@ -20,8 +20,12 @@
 ; 29/03/2023:	Added mos_uopen, mos_uclose, mos_ugetc, mos_uputc
 ; 13/04/2023:	Added FatFS file structures (FFOBJID, FIL, DIR, FILINFO)
 ; 15/04/2023:	Added mos_getfil, mos_fread, mos_fwrite and mos_flseek
-; Changed:      08/04/2924 adapt to ez80asm
-
+; 19/05/2023:	Added sysvar_scrMode
+; 05/06/2023:	Added sysvar_rtcEnable
+; 03/08/2023:	Added mos_setkbvector
+; 10/08/2023:	Added mos_getkbmap
+; 11/11/2023:	Added mos_i2c_open, mos_i2c_close, mos_i2c_write and mos_i2c_read
+; 09/04/2024:   Adapter to ez80asm
 ; VDP control (VDU 23, 0, n)
 ;
 vdp_gp:			EQU 	80h
@@ -67,6 +71,13 @@ mos_getfil:		EQU	19h
 mos_fread:		EQU	1Ah
 mos_fwrite:		EQU	1Bh
 mos_flseek:		EQU	1Ch
+mos_setkbvector:	EQU	1Dh
+mos_getkbmap:		EQU	1Eh
+mos_i2c_open:		EQU	1Fh
+mos_i2c_close:		EQU	20h
+mos_i2c_write:		EQU	21h
+mos_i2c_read:		EQU	22h
+
 
 ; FatFS file access functions
 ;
@@ -150,10 +161,19 @@ sysvar_scrpixelIndex:	EQU	16h	; 1: Index of pixel data read from screen
 sysvar_vkeycode:	EQU	17h	; 1: Virtual key code from FabGL
 sysvar_vkeydown:	EQU	18h	; 1: Virtual key state from FabGL (0=up, 1=down)
 sysvar_vkeycount:	EQU	19h	; 1: Incremented every time a key packet is received
-sysvar_rtc:		EQU	1Ah	; 8: Real time clock data
+sysvar_rtc:		EQU	1Ah	; 6: Real time clock data
+sysvar_spare:		EQU	20h	; 2: Spare, previously used by rtc
 sysvar_keydelay:	EQU	22h	; 2: Keyboard repeat delay
 sysvar_keyrate:		EQU	24h	; 2: Keyboard repeat reat
 sysvar_keyled:		EQU	26h	; 1: Keyboard LED status
+sysvar_scrMode:		EQU	27h	; 1: Screen mode
+sysvar_rtcEnable:	EQU	28h	; 1: RTC enable flag (0: disabled, 1: use ESP32 RTC)
+sysvar_mouseX:		EQU	29h	; 2: Mouse X position
+sysvar_mouseY:		EQU	2Bh	; 2: Mouse Y position
+sysvar_mouseButtons:	EQU	2Dh	; 1: Mouse button state
+sysvar_mouseWheel:	EQU	2Eh	; 1: Mouse wheel delta
+sysvar_mouseXDelta:	EQU	2Fh	; 2: Mouse X delta
+sysvar_mouseYDelta:	EQU	31h	; 2: Mouse Y delta
 	
 ; Flags for the VPD protocol
 ;
@@ -163,6 +183,8 @@ vdp_pflag_point:	EQU	00000100b
 vdp_pflag_audio:	EQU	00001000b
 vdp_pflag_mode:		EQU	00010000b
 vdp_pflag_rtc:		EQU	00100000b
+vdp_pflag_mouse:	EQU	01000000b
+; vdp_pflag_buffered:	EQU	10000000b
 
 ;
 ; FatFS structures
