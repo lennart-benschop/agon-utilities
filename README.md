@@ -73,28 +73,29 @@ binary fonts (like the font program does) and PSF fonts as used by the
 Linux console.
 
 Example:
-`loadfont 10 Lat15-Fixed16.psf'
+
+`loadfont 10 Lat15-Fixed16.psf`
 
 The first parameter is a buffer ID, a number in the range 0..65534. Instead
-we can use the word `sys' to select the system font. The system font can
+we can use the word `sys` to select the system font. The system font can
 only be loaded with 8x8 characters, while many font sizes are supported
 with PSF files. An optional third parameter on the command line specifies
 a code page. Currently supported code pages are CP1252 and CP437.
 
 If a PSF font has a Unicode table, it will be used to place the glyphs
 of the font at the appropriate code points in the code page.  Instead
-of a code page we can specify `none' for no translation and `upper' to
+of a code page we can specify `none` for no translation and `upper` to
 load the upper 256 characters of a 512-character PSF font. Note that
 most PSF fonts with Latin-1 or Windows-1252 support have many of the
 non-ASCII characters at different positions, therefore the Unicode
 table will be needed.
 
 Example:
-`loadfont 11 Lat15-terminus20x10.psf cp437'
+`loadfont 11 Lat15-terminus20x10.psf cp437`
 
 Usable psf fonts can be found here
 https://www.zap.org.au/projects/console-fonts-zap/ and in the
-`/usr/share/consolefonts" directory of a Linux system (gunzip
+`/usr/share/consolefonts` directory of a Linux system (gunzip
 compressed psf files first). Also the terminus-fonts package can be
 used.
 
@@ -103,19 +104,23 @@ used.
 This program selects a font, previously loaded by the `loadfont' command.
 
 Example:
-`fontctl 11'
+
+`fontctl 11`
 
 The parameter is a buffer ID, the same as used with `loadfont'. The
-word `sys' can be used instead to select the system font.
+word `sys` can be used instead to select the system font.
 
-A second parameter `show' can be used to show all 256 characters of the font.
-Instead, `clear' canb e used to remove the font and it s buffer.
+A second parameter `show` can be used to show all 256 characters of the font.
+Instead, `clear` can be used to remove the font and its buffer.
 
 Example:
-`font 11 clear'
+
+`font 11 clear`
+
 selectsfont 11 and shows it.
 
-`font 11 clear'
+`font 11 clear`
+
 clears font 11.
 
 ### nano
