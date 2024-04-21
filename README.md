@@ -12,8 +12,8 @@ driectory containing ez80asm and the binary directory of AgDev in your
 path and you can just run make to build the utilities.
 
 All pre-assembled and precompiled binaries are also provided. The
-`loadfont' program must be in the `bin' directory and the other
-binaries in the `mos' directory. Assumed is Agon Console8 MOS-2.23 and
+`loadfont` program must be in the `bin` directory and the other
+binaries in the `mos` directory. Assumed is Agon Console8 MOS-2.23 and
 VDP-2.8.0.
 
 Note: the copy utility has been removed because it is now an internal command in MOS.
@@ -63,8 +63,8 @@ files included in the project contain meta-information, but they start
 with the bitmap data in a form that the font utility can use.  The 8x8
 fonts from this set, you can just load with the font utility. It
 ignores the meta data. Some of them are only ASCII, some of them have
-code page 437 fonts. This program is superseded by the `loadfont' and
-`fontctl' programs.
+code page 437 fonts. This program is superseded by the `loadfont` and
+`fontctl` programs.
 
 ### loadfont
 
@@ -101,13 +101,13 @@ used.
 
 ### fontctl
 
-This program selects a font, previously loaded by the `loadfont' command.
+This program selects a font, previously loaded by the `loadfont` command.
 
 Example:
 
 `fontctl 11`
 
-The parameter is a buffer ID, the same as used with `loadfont'. The
+The parameter is a buffer ID, the same as used with `loadfont`. The
 word `sys` can be used instead to select the system font.
 
 A second parameter `show` can be used to show all 256 characters of the font.
@@ -115,9 +115,9 @@ Instead, `clear` can be used to remove the font and its buffer.
 
 Example:
 
-`font 11 clear`
+`font 11 show`
 
-selectsfont 11 and shows it.
+selects font 11 and shows it.
 
 `font 11 clear`
 
