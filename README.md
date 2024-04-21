@@ -6,9 +6,15 @@ The project will include an editor some day. All are MOS commands, all are writt
 Parts of the code are based on the repository https://github.com/breakintoprogram/agon-projects
 
 The projects are built with ez80asm
-(https://github.com/envenomator/agon-ez80asm). Under Linux,
-make sure to have ez80asm in your path and you can just run make to
-build the utilities.
+(https://github.com/envenomator/agon-ez80asm) and AgDev
+(https://github.com/pcawte/AgDev). Under Linux, make sure to have a
+driectory containing ez80asm and the binary directory of AgDev in your
+path and you can just run make to build the utilities.
+
+All pre-assembled and precompiled binaries are also provided. The
+`loadfont' program must be in the `bin' directory and the other
+binaries in the `mos' directory. Assumed is Agon Console8 MOS-2.23 and
+VDP-2.8.0.
 
 Note: the copy utility has been removed because it is now an internal command in MOS.
 
@@ -52,9 +58,65 @@ Three fonts are included:
  the bytes bit-reversed compared to what we need, so I changed it to the right format. It does not look pretty, but it's a start.
 https://github.com/dhepper/font8x8
 
-You can check out https://github.com/epto/epto-fonts
-The `*.font` files included in the project contain meta-information, but they start with the bitmap data in a form that the font utility can use.
-The 8x8 fonts from this set, you can just load with the font utility. It ignores the meta data. Some of them are only ASCII, some of them have code page 437 fonts.
+You can check out https://github.com/epto/epto-fonts The `*.font`
+files included in the project contain meta-information, but they start
+with the bitmap data in a form that the font utility can use.  The 8x8
+fonts from this set, you can just load with the font utility. It
+ignores the meta data. Some of them are only ASCII, some of them have
+code page 437 fonts. This program is superseded by the `loadfont' and
+`fontctl' programs.
+
+### loadfont
+
+This program uses the new font commands of VDP-2.8.0. It can load raw
+binary fonts (like the font program does) and PSF fonts as used by the
+Linux console.
+
+Example:
+`loadfont 10 Lat15-Fixed16.psf'
+
+The first parameter is a buffer ID, a number in the range 0..65534. Instead
+we can use the word `sys' to select the system font. The system font can
+only be loaded with 8x8 characters, while many font sizes are supported
+with PSF files. An optional third parameter on the command line specifies
+a code page. Currently supported code pages are CP1252 and CP437.
+
+If a PSF font has a Unicode table, it will be used to place the glyphs
+of the font at the appropriate code points in the code page.  Instead
+of a code page we can specify `none' for no translation and `upper' to
+load the upper 256 characters of a 512-character PSF font. Note that
+most PSF fonts with Latin-1 or Windows-1252 support have many of the
+non-ASCII characters at different positions, therefore the Unicode
+table will be needed.
+
+Example:
+`loadfont 11 Lat15-terminus20x10.psf cp437'
+
+Usable psf fonts can be found here
+https://www.zap.org.au/projects/console-fonts-zap/ and in the
+`/usr/share/consolefonts" directory of a Linux system (gunzip
+compressed psf files first). Also the terminus-fonts package can be
+used.
+
+### fontctl
+
+This program selects a font, previously loaded by the `loadfont' command.
+
+Example:
+`fontctl 11'
+
+The parameter is a buffer ID, the same as used with `loadfont'. The
+word `sys' can be used instead to select the system font.
+
+A second parameter `show' can be used to show all 256 characters of the font.
+Instead, `clear' canb e used to remove the font and it s buffer.
+
+Example:
+`font 11 clear'
+selectsfont 11 and shows it.
+
+`font 11 clear'
+clears font 11.
 
 ### nano
 
