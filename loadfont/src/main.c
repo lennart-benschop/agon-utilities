@@ -20,8 +20,6 @@
 #define CODE_PAGE_DEFAULT 0
 #define CODE_PAGE_NONE 1
 #define CODE_PAGE_UPPER 2
-#define CODE_PAGE_CP1252 3
-#define CODE_PAGE_CP437  4
 
 
 static unsigned int
@@ -56,6 +54,7 @@ unsigned int n_glyphs;
 unsigned char font_width;
 unsigned char font_height;
 unsigned char code_page = CODE_PAGE_DEFAULT;
+char *cp_name = "cp1252";
 unsigned int glyphs_start;
 unsigned int glyph_bytes;
 unsigned int utable_ptr;
@@ -153,7 +152,7 @@ translate_codepoints(void)
 {
   unsigned int i,j;
   unsigned int n_translated = 0;
-  const uint16_t *cp_p;
+  const uint16_t *cp_p = NULL;
   uint16_t w;
   if (code_page == CODE_PAGE_UPPER && n_glyphs >= 512) {
     /* Want to load upper 256 glyphs from 512 glyphs font */
@@ -166,11 +165,14 @@ translate_codepoints(void)
       glyphptrs[i] = fontbuf + glyphs_start + i*glyph_bytes;
     }
   } else {
-    if (code_page == CODE_PAGE_DEFAULT || code_page == CODE_PAGE_CP1252) {
-      cp_p = &codepage_1252[0];
-    } else if (code_page == CODE_PAGE_CP437) {
-      cp_p = &codepage_437[0];
-    } else {
+    for (i=0; i<N_CODEPAGES; i++) {
+      if (strcmp(codetable[i].name,cp_name)==0) {
+	cp_p = codetable[i].cp;
+	break;
+      }
+    }
+    if (cp_p == NULL) {
+      printf("Unknown code page\n");
       return 1;
     }
     for (i=0; i<256; i++)
@@ -243,12 +245,16 @@ main(int argc, char**argv)
   unsigned int bufid;
   FILE *fontfile;
   unsigned int namelen;
+  unsigned int i;
   if (argc < 3) {
     printf("Usage: loadfont <bufid> <file> [<codepage>]\n"
            "    bufid can be 'sys' or an integer in range 0..65534\n"
            "    file can be raw binary or (uncompressed) psf\n"
-           "    codepage can be none, upper, cp1252 or cp437\n"
-	   "    none = no translation, upper is upper range of 512-char font\n");
+           "    codepage can be none, upper or any of:\n");
+    for (i=0; i<N_CODEPAGES; i++) {
+      printf("%s ",codetable[i].name);
+    }
+    printf("\n\n    none = no translation, upper is upper range of 512-char font\n");
     return 19;
   }
   if (strcmp(argv[1],"sys") == 0)
@@ -271,14 +277,14 @@ main(int argc, char**argv)
   font_bytes = fread(fontbuf, 1, MAX_FONTBUF_SIZE, fontfile);
   fclose(fontfile);
   if (argc > 3) {
-    if (strcmp(argv[3],"none") == 0)
+    if (strcmp(argv[3],"none") == 0) {
       code_page = CODE_PAGE_NONE;
-    else if (strcmp(argv[3],"upper") == 0)
+    } else if (strcmp(argv[3],"upper") == 0) {
       code_page = CODE_PAGE_UPPER;
-    else if (strcmp(argv[3],"cp1252") == 0)
-      code_page = CODE_PAGE_CP1252;
-    else if (strcmp(argv[3],"cp437") == 0)
-      code_page = CODE_PAGE_CP437;    
+    } else {
+      code_page = CODE_PAGE_DEFAULT;
+      cp_name = argv[3];
+    }
   }
   
   if (parse_header() != 0) {
