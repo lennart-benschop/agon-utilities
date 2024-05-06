@@ -12,9 +12,9 @@ driectory containing ez80asm and the binary directory of AgDev in your
 path and you can just run make to build the utilities.
 
 All pre-assembled and precompiled binaries are also provided. The
-`loadfont` program must be in the `bin` directory and the other
-binaries in the `mos` directory. Assumed is Agon Console8 MOS-2.23 and
-VDP-2.8.0.
+`loadfont` and `recode` programs must be in the `bin` directory and
+the other binaries in the `mos` directory. Assumed is Agon Console8
+MOS-2.23 and VDP-2.8.0.
 
 Note: the copy utility has been removed because it is now an internal command in MOS.
 
@@ -84,7 +84,7 @@ parameter on the command line specifies a code page. Currently
 supported code pages include windows code pages CP1250 (Middle and
 Eastern Europe), CP1251 (Cyrillic), CP1252 (Western Europe), CP1253
 (Greek), CP1254 (Turkish), CP1257 (Baltic), all Latin, Greek and
-Cyrillic character stes fromt the ISO-8859 series, DOS CP437, Cyillic
+Cyrillic character stes from the ISO-8859 series, DOS CP437, Cyillic
 KOI-8R and KOI8-U and macroman (Old Macintosh).
 
 If a PSF font has a Unicode table, it will be used to place the glyphs
