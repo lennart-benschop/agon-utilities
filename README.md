@@ -130,11 +130,12 @@ clears font 11.
 
 ### recode
 
-This program converts text files between Unicode and verious code
-pages.  Code pagez include the same code pages as available for
-`loadfont`, utf8 and utf16. Apart from the text encoding we can change
-the end-of-line encoding to CR only (old MAC0, LF only (Linux) or
-CR-LF (DOS, Windows). Files are updated in-place and the old file is saved with a `.bak` suffix.
+This program converts text files between Unicode and various code
+pages.  Code pages include the same code pages as available for
+`loadfont`, plus utf8 and utf16. Apart from the text encoding we can
+change the end-of-line encoding to CR only (old MAC), LF only (Linux)
+or CR-LF (DOS, Windows). Files are updated in-place and the old file
+is saved with a `.bak` suffix.
 
 Example commands:
 
