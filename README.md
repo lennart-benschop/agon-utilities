@@ -76,11 +76,16 @@ Example:
 
 `loadfont 10 Lat15-Fixed16.psf`
 
-The first parameter is a buffer ID, a number in the range 0..65534. Instead
-we can use the word `sys` to select the system font. The system font can
-only be loaded with 8x8 characters, while many font sizes are supported
-with PSF files. An optional third parameter on the command line specifies
-a code page. Currently supported code pages are CP1252 and CP437.
+The first parameter is a buffer ID, a number in the range
+0..65534. Instead we can use the word `sys` to select the system
+font. The system font can only be loaded with 8x8 characters, while
+many font sizes are supported with PSF files. An optional third
+parameter on the command line specifies a code page. Currently
+supported code pages include windows code pages CP1250 (Middle and
+Eastern Europe), CP1251 (Cyrillic), CP1252 (Western Europe), CP1253
+(Greek), CP1254 (Turkish), CP1257 (Baltic), all Latin, Greek and
+Cyrillic character stes fromt the ISO-8859 series, DOS CP437, Cyillic
+KOI-8R and KOI8-U and macroman (Old Macintosh).
 
 If a PSF font has a Unicode table, it will be used to place the glyphs
 of the font at the appropriate code points in the code page.  Instead
@@ -122,6 +127,32 @@ selects font 11 and shows it.
 `font 11 clear`
 
 clears font 11.
+
+### recode
+
+This program converts text files between Unicode and verious code
+pages.  Code pagez include the same code pages as available for
+`loadfont`, utf8 and utf16. Apart from the text encoding we can change
+the end-of-line encoding to CR only (old MAC0, LF only (Linux) or
+CR-LF (DOS, Windows). Files are updated in-place and the old file is saved with a `.bak` suffix.
+
+Example commands:
+
+`recode crlf myfile.txt`
+
+This changes the end-of-line characters to CR-LF without changing the
+character encodings.
+
+`recode lf cp1252 utf8 foo.txt`
+
+This converts from Windows 1252 to UTF8 and changes the end-of-line
+characters to LF only.
+
+`recode cp1252 latin9 bar.txt`
+
+This converts a text file from CP1252 to Latin9 (ISO8859-15) without
+changing the end-of-line characters.
+
 
 ### nano
 
