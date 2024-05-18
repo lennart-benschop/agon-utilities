@@ -12,9 +12,9 @@ driectory containing ez80asm and the binary directory of AgDev in your
 path and you can just run make to build the utilities.
 
 All pre-assembled and precompiled binaries are also provided. The
-`loadfont` and `recode` programs must be in the `bin` directory and
-the other binaries in the `mos` directory. Assumed is Agon Console8
-MOS-2.23 and VDP-2.8.0.
+`loadfont` and `recode` programs, as well as everything belonging to
+`mc`, must be in the `bin` directory and the other binaries in the
+`mos` directory. Assumed is Agon Console8 MOS-2.23 and VDP-2.8.0.
 
 Note: the copy utility has been removed because it is now an internal command in MOS.
 
@@ -186,4 +186,15 @@ for search forward and backward. Also Control-T to insert special characters.
 
 Possibly planned: Control-J for justifying paragraph, Control-\ for search+replace, Control-W for wordwrap functionality (non-nano).
 
- 
+### mc
+
+This is the 12AM Commander, a Midnight-commander look-alike. It can
+only work on MOS 2.2.3 and up. To install it, you must have `mc.bin`,
+`12amc.ovl`, `12amc.hlp` and `12amc.cfg` all in the `/bin`
+directory. The file `12amc.cfg` is a configuration file that can be
+edited. You can specify viewer and editor commands and specify
+programs to be run for certain file extensions.
+
+To start the program, just type `mc`. To exit, simply press F10 or
+ESC.  You will see two directories side by side and yoiu can switch
+between them with the TAB key. For more information type F1.

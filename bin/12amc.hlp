@@ -1,0 +1,90 @@
+12AM COMMANDER
+
+A Midnight Commander look-alike for Agon Light.
+v0.01 (c) 2024 L.C. Benschop.
+
+Keys used:
+
+Cursor up, move one entry up in current directory.
+Cursor down, move one entry down in current directory.
+Page up, move 15 entries up in current directory.
+Page down, move 15 entries up in current directory.
+Home, Move to top of current directory.
+End, Move to bottom of current directory.
+
+Tab, switch between left and right directory windows, change current
+directory accordingly.
+
+^L: Reload directories.
+
+Enter, perform 'execute' action on item under cursor.
+- For directories (including ..), change to that directory.
+- For *.bin files, execute that file.
+- Any other files: perform exec action as per the /bin/12amc.cfg file
+
+Ins or Ctrl-T Select/Deselect the file under the cursor.
++ Prompt for a pattern and select files in current directory.
+\ or - Prompt for a pattern and deselect files in current directory.
+
+F1 (Help)  View help file /bin/12amc.hlp
+
+F2 (Cmd)   Go to fullescreen mode and allow to type a command
+
+F3 (View)  View the current file (viewer program specified in config file).
+
+F4 (Edit)  Edit the current file (editor program specified in config file).
+   
+F5 (Copy)  Copy all selected files to other directory.
+           If no file selected, prompt for name of copied file and copy it
+           there.
+
+F6 (Move)  Move all selected files to other directory.
+           If no file selected, prompt for name and rename the file..
+
+F7 (Mkdir) Prompt for a name and create a new directory.
+
+F8 (Delete) Delete selected files (or current file if no files selected).
+            Only one empty directory can be removed.
+
+F9 (Cmd+F)  Go to fullescreen mode and allow to type a command, with
+           the current file already in the edit buffer.
+
+F10 (Quit) Exit the Commander.
+             
+Any other key will put this in the edit buffer and allow a command
+to be typed. While the command is being typed, all keys behave
+as in the MOS command line. The defined hotkeys are available, the 
+cursor up and down keys navigate through command line history and
+there is no special meaning for + or -.
+
+CONFIGURATION FILE
+
+The file /bin/12am.cfg can contain the following lines.
+
+view <commandline>
+
+This specifies the viewer that will be executed with the F3 key. The %s
+inside a command line serves as a placeholder for the file.
+
+edit <commandline>
+
+This specifies the editor that will be executed with the F4 key. 
+
+exec <ext> <commandline>
+
+This specifies the command that will be executed when pressing ENTER on a 
+file with a specific extension.
+
+Any line starting with a # is a comment. Can be used to comment out all but
+one viewer or editor.
+
+Example configuration file:
+view nano %s &90000
+edit nano %s &90000
+exec bas bbcbasic24 %s
+exec bbc bbcbasic24 %s
+exec 4th forth24 %s
+
+---- end of file ---
+
+
