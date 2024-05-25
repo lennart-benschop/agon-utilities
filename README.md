@@ -120,11 +120,11 @@ Instead, `clear` can be used to remove the font and its buffer.
 
 Example:
 
-`font 11 show`
+`fontctl 11 show`
 
 selects font 11 and shows it.
 
-`font 11 clear`
+`fontctl 11 clear`
 
 clears font 11.
 
@@ -196,5 +196,13 @@ edited. You can specify viewer and editor commands and specify
 programs to be run for certain file extensions.
 
 To start the program, just type `mc`. To exit, simply press F10 or
-ESC.  You will see two directories side by side and yoiu can switch
+ESC.  You will see two directories side by side and you can switch
 between them with the TAB key. For more information type F1.
+
+Note: the main code of mc resides in `12amc.ovl` and this must be
+loaded and run through `mc.bin` (not directly via load & run commands
+for example). The program `mc.bin` stores a launcher in internal RAM,
+which can load and execute external programs at address &40000 and
+later reload and rerun the `12amc.ovl` program. This launcher is an
+important part of the functionality.
+
