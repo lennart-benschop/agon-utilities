@@ -1,11 +1,13 @@
 /* 12AM COmmander, a Midnight Commander Lookalike for Agon Light.
    11/05/2024
+   23/06/2024: added mode/font/video mode config
  */
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <mos_api.h>
 #include <agon/vdp_vdu.h>
 #include "mc.h"
@@ -28,6 +30,13 @@ bool fQuit;
 
 static char viewer_cmd[256];
 static char editor_cmd[256];
+
+uint8_t video_mode = 3;
+uint16_t font_nr = 65535; 
+uint8_t fgcol = 15; /* Foreground colour */
+uint8_t bgcol = 0;  /* Background colour */
+uint8_t hlcol = 11; /* Hilite colour */
+
 
 void execute_command(char *cmdline,bool fWait)
 {
@@ -170,15 +179,34 @@ char * scan_word(char*dest, char *src)
   dest[i] = 0;
   return p;     
 }
-  
+
+
+/* Replacement for fgets as the one in AgDev appears to be broken,
+   does not detect EOF on real machine */
+static char * my_fgets(char *s, unsigned int maxlen, FILE *f)
+{
+  unsigned int i;
+  char c;
+  for(i=0; i<maxlen-1;) {
+    if (fread(&c, 1, 1, f) <= 0) break;
+    if (c=='\r') continue;
+    s[i] = c;
+    i++;
+    if (c=='\n') break;
+  }
+  s[i] = 0;
+  if (i==0)
+    return 0;
+  else
+    return s;
+}
 
 void read_cfg_file(void)
 {
   FILE * infile = fopen("/bin/12amc.cfg","r");
   char *p;
-  putch(14);
   if (infile != 0) {
-    while(fgets(cmdbuf, 256, infile) != NULL) {
+    while(my_fgets(cmdbuf, 256, infile) != NULL) {
       if (cmdbuf[0] == '\n' || cmdbuf[0] == '#') continue;
       cmdbuf[strlen(cmdbuf)-1] = 0; /* Get rid of trailing newline */
       p = cmdbuf;
@@ -197,6 +225,21 @@ void read_cfg_file(void)
 	  cmd_extensions[n_extensions].cmdline = strdup(p);
 	  n_extensions++;
 	}
+      } else if (strcmp(pathbuf,"mode") == 0) {
+	video_mode = strtol(p,&p,10);
+      } else if (strcmp(pathbuf,"font") == 0) {
+	while (*p++ == ' ')
+	  ;
+	p--;
+	if (memcmp(p,"sys",3)==0) {
+	  font_nr = 65535;
+	}else {
+	  font_nr = strtol(p,&p,10);
+	}
+      } else if (strcmp(pathbuf,"color") == 0 || strcmp(pathbuf,"colour") == 0) {
+	fgcol = strtol(p,&p,10);
+	bgcol = strtol(p,&p,10);
+	hlcol = strtol(p,&p,10);
       }
     }
     fclose(infile);

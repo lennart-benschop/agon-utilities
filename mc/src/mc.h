@@ -3,6 +3,8 @@
    Common declarations and Function prototypes.
 
    11/05/2024
+
+   23/06/2024: added mode/font/video mode config
  */
 
 #ifndef MC_H_
@@ -10,6 +12,12 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+
+extern uint8_t video_mode;
+extern uint16_t font_nr; 
+extern uint8_t fgcol; /* Foreground colour */
+extern uint8_t bgcol;  /* Background colour */
+extern uint8_t hlcol; /* Hilite colour */
 
 /* Number of bytes fitting into a single directory window*/
 extern uint8_t dirwin_height;

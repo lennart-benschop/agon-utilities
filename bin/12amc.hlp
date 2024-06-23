@@ -61,6 +61,19 @@ CONFIGURATION FILE
 
 The file /bin/12am.cfg can contain the following lines.
 
+mode <number>
+
+Select a video mode (should be at least 80 cols wide and 25 cols tall).
+
+font bufid
+font sys
+
+Select a font.
+
+color <fg> <bg> <hilite>
+
+Specify color for foreground, background and hilight.
+
 view <commandline>
 
 This specifies the viewer that will be executed with the F3 key. The %s
@@ -79,6 +92,9 @@ Any line starting with a # is a comment. Can be used to comment out all but
 one viewer or editor.
 
 Example configuration file:
+font sys
+mode 0
+color 15 4 10
 view nano %s &90000
 edit nano %s &90000
 exec bas bbcbasic24 %s

@@ -3,6 +3,8 @@
    Display functions.
 
    12/05/2024
+
+   23/06/2024: added mode/font/video mode config
  */
 
 #include <stdio.h>
@@ -38,6 +40,8 @@ display_win_t display_wins[3];
  */
 void display_init(void)
 {
+  uint32_t time;
+  volatile uint8_t *sysvars = mos_sysvars();
   static char disp_str[] = {
     12, // Clear screen
     23, 0, 192, 0, // Set physical coordinates.
@@ -46,16 +50,24 @@ void display_init(void)
     15,            // No paged mode.
     18, 0, 15      // Graphics colour to white
   };
-  if (getsysvar_scrCols() < 80 || getsysvar_scrRows()<25) {
-    uint32_t time;
-    vdp_mode(3);
-    time = getsysvar_time();
-    while (getsysvar_time() == time) {
-    }
+  
+  /* set the mode */
+  if (sysvars[sysvar_scrMode] != video_mode) {
+    putch(22); putch(video_mode);
   }
+  /* Select the font */
+  putch(23);putch(0);putch(0x95);putch(0);
+  putch(font_nr & 0xff); putch(font_nr >> 8);putch(0);
   display_setattr(false,false);
   vdp_cursor_enable(false);
   mos_puts(&disp_str[0],sizeof disp_str, 0);
+  time = getsysvar_time();
+  while (getsysvar_time() == time) {
+  }
+  sysvars[sysvar_vdp_pflags] = 0;
+  putch(23);putch(0);putch(0x86); /* Get mode parameters */
+  while ((sysvars[sysvar_vdp_pflags] & 0x10) == 0)
+    ;
   scr_cols = getsysvar_scrCols();  
   scr_rows = getsysvar_scrRows();
   font_width = getsysvar_scrwidth() / scr_cols;  
@@ -86,6 +98,7 @@ void display_init(void)
 void display_finish(void)
 {
   static char disp_str[] = {
+    17, 15, 17, 128, // colours back to white fg/black bg
     26, // Cancel text viewport
     12, // Clear screen
     23, 0, 192, 1, // Set logical coordinates.
@@ -138,11 +151,11 @@ void display_frame(void)
 /* Select display attributes for inverse (cursor selected) and marked */
 void display_setattr(bool inv, bool marked)
 {
-  int col = marked ? (n_colours==4?2:11) : 15;
+  int col = marked ? hlcol : fgcol;
   if (inv) {
-    putch(17);putch(0);putch(17);putch(128+col);
+    putch(17);putch(bgcol);putch(17);putch(128+col);
   } else {
-    putch(17);putch(col);putch(17);putch(128);
+    putch(17);putch(col);putch(17);putch(128+bgcol);
   }
 }
 
