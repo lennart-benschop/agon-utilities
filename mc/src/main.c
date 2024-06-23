@@ -42,11 +42,12 @@ void execute_command(char *cmdline,bool fWait)
 {
   int res;
   display_finish();
+  cmdline[strlen(cmdline)+1] = 0;
   res = mos_oscli(cmdline,NULL,0); /* OSCLI will do internal commands and moslets*/
   if (res == 20) { /* Try it as an external command (execute from /bin) */
     char *q = cmdline;
     char *p = (char*)LAUNCHER_EXT_EXEC;
-    /* Put full anem of executable at LAUNCHER_EXT_EXEC  */
+    /* Put full name of executable at LAUNCHER_EXT_EXEC  */
     if (q[0]=='/') {
       strcpy(p,q);
       q+=strlen(q);
@@ -57,8 +58,9 @@ void execute_command(char *cmdline,bool fWait)
       while (*q!=0) {
 	*p++ = *q++;
       }
-      strcpy(p,".bin");
+      *p = 0;
       q++;
+      strcat(p,".bin");
     }
     /* Prepare the run command in the launcher */
     p = (char*)LAUNCHER_EXT_CMDLINE;
