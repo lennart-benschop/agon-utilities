@@ -514,17 +514,19 @@ main(int argc, char *argv[])
 	cmd_reload_dir();
 	break;
       default:
-	mos_cd(which_dir==1?dirname_left:dirname_right);
-	display_setwin(3);
-	putch(12);
-	printf("* ");
-	cmdbuf[0] = ch;
-	cmdbuf[1] = 0;
-	vdp_cursor_enable(true);
-	mos_editline(cmdbuf, 256, 0);
-	vdp_cursor_enable(false);
-	printf("\n");
-	execute_command(cmdbuf,true);
+	if (ch >= 32) {
+	  mos_cd(which_dir==1?dirname_left:dirname_right);
+	  display_setwin(3);
+	  putch(12);
+	  printf("* ");
+	  cmdbuf[0] = ch;
+	  cmdbuf[1] = 0;
+	  vdp_cursor_enable(true);
+	  mos_editline(cmdbuf, 256, 0);
+	  vdp_cursor_enable(false);
+	  printf("\n");
+	  execute_command(cmdbuf,true);
+	}
       }     
     }
   } while (!fQuit);
