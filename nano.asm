@@ -1120,7 +1120,7 @@ Next_AtEnd:		POP	HL
 			SCF	
 			RET
 ; Move the combination of line addres and line number n lines forward in the text.
-; Never go beyont the last line.
+; Never go beyond the last line.
 ;
 ; Inputs: IX is the address of either cur_lineaddr or top_lineaddr
 ;	  BC is the number of lines to move forward (limited to 16 bits).
@@ -1904,7 +1904,7 @@ s_NAME:			DB	"Editor for Agon ",0
 s_LINE:			DB	"Line ",0
 s_HELP_Small:		DB	" bytes -- Esc to exit, Ctrl-G for help ",0
 
-s_HELP_Large:		DB      12, "Text editor for Agon v0.10, Copyright 2023-2024, L.C. Benschop\r\n"
+s_HELP_Large:		DB      12, "Text editor for Agon v0.11, Copyright 2023-2024, L.C. Benschop\r\n"
 			DB	"\r\n"
 			DB  	"Cursor movement:\r\n"	
 			DB	"Ctrl-B or cursor left, Ctrl-F or cursor right\r\n"
@@ -1990,6 +1990,11 @@ file_modified:		DS 1			; Flag that tells if a file is modified.
 cut_continue:		DS 1			; Flag to indicate that we want to continue cut/copy the next line and add to cut buffer.
 save_sp:		DS 3			; Saved stack pointer for error return.
 ; The default Edit buffer is in the space between the end of the program and the top of the MOS command space.
+current_fg:    	   	DS 1 	    	  	; Foreground colour.
+current_bg:    	   	DS 1 	    	  	; Background colour.
 default_buf:
+			; Initialization code can overlap with text buffer, no longer required
+			; after initialization.
+			include "scr_init.inc"
 default_buf_end:	EQU 0B8000h
 			

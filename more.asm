@@ -52,6 +52,16 @@ main_waitmode:		BIT	4, (IX+sysvar_vpd_pflags)
 			LD (prev_cr), A
 			LD (current_col), A
 			LD (num_lines), A
+			LD 	A, 128
+			CALL	get_colour
+			LD	(fg_norm), A
+			ADD	A, 128
+			LD	(bg_inv), A
+			LD 	A, 129
+			CALL	get_colour
+			LD	(fg_inv), A
+			ADD	A, 128
+			LD	(bg_norm), A
  			; Load one byte per character.
 main_byte_loop:
 			MOSCALL mos_feof
@@ -159,9 +169,10 @@ nl_nocrlf:		XOR 	A
 			LD	(num_lines), A		; Clear line counter
 			LD 	HL, c_MORE
 			CALL 	PRCNTSTR		; Print More message
-@@:			MOSCALL mos_getkey
+@@:
+			MOSCALL mos_getkey
 			AND 	A
-			JR	Z, @B			
+			JR	Z, @B
 			CP	'Q'
 			JR	Z, do_quit
 			CP	'q'
@@ -181,13 +192,35 @@ do_quit:		LD	HL, c_CLEAR
 s_ERROR_SRC:		DB 	" Cannot open source file\r\n", 0
 s_USAGE:		DB	" Usage: more <txtfile>\r\n", 0                                 
 c_MORE:			DB  	16 ;String length
-			DB	17, 0  ;foregrond black
-			DB 	17, 143 ; background white
+			DB	17
+fg_inv:			DB   	0 ; foregrond reverse
+			DB 	17
+bg_inv:			DB	0 ; background reverse
 			DB      "--More--"
-			DB 	17, 15 ; foreground white
-			DB	17, 128 ; background black
+			DB 	17
+fg_norm:		DB      0 ; foreground normal
+			DB	17
+bg_norm:		DB      0 ; background normal
 c_CLEAR:		DB      10,13,32,32,32,32,32,32,32,32,13 ; Clear the --More-- output
 c_GETMODE:               DB	4, 15, 23,0,vdp_mode	; Get screen mode parameters. Also switch off paged mode.
+
+; Input A, index to get colour (128 = foreground, 129 = background).
+; output: A scolour index of fg or bg colour.
+get_colour:	    	RES     2,(IX+sysvar_vpd_pflags)
+			LD  	L, A
+			LD	A, 23
+			RST.L   10h
+			XOR	A
+			RST.L   10h
+			LD	A, 148
+			RST.L   10h
+			LD	A, L
+			RST.L   10h
+@@:			BIT	2, (IX+sysvar_vpd_pflags)			
+			JR 	Z, @B		        ; Wait until received.	
+			LD	A,(IX+sysvar_scrpixelIndex)
+			RET
+
 
 current_col:		DS	1			; Current column on the screen.
 num_lines:		DS 	1			; Number of lines printed since last pause

@@ -1,7 +1,7 @@
 12AM COMMANDER
 
 A Midnight Commander look-alike for Agon Light.
-v0.01 (c) 2024 L.C. Benschop.
+v0.02 (c) 2024 L.C. Benschop.
 
 Keys used:
 
@@ -87,6 +87,10 @@ exec <ext> <commandline>
 
 This specifies the command that will be executed when pressing ENTER on a 
 file with a specific extension.
+
+execp <ext> <commandline>
+
+Like exec, but it will pause after executing the command.
 
 Any line starting with a # is a comment. Can be used to comment out all but
 one viewer or editor.

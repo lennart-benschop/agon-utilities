@@ -164,6 +164,7 @@ void cmd_reload_dir(void)
 struct {
   char *ext;
   char *cmdline;
+  bool do_pause;
 } cmd_extensions[N_EXTENSIONS];
 unsigned int n_extensions;
 
@@ -207,6 +208,7 @@ void read_cfg_file(void)
 {
   FILE * infile = fopen("/bin/12amc.cfg","r");
   char *p;
+  bool do_pause;
   if (infile != 0) {
     while(my_fgets(cmdbuf, 256, infile) != NULL) {
       if (cmdbuf[0] == '\n' || cmdbuf[0] == '#') continue;
@@ -217,7 +219,8 @@ void read_cfg_file(void)
 	strcpy(viewer_cmd,p);
       } else if (strcmp(pathbuf,"edit") == 0) {
 	strcpy(editor_cmd,p);
-      } else if (strcmp(pathbuf,"exec") == 0) {
+      } else if (strcmp(pathbuf,"exec") == 0 || strcmp(pathbuf,"execp") == 0) {
+	do_pause = strcmp(pathbuf,"execp") == 0;
 	p = scan_word(pathbuf,p);
 	while (*p++==' ')
 	  ;
@@ -225,6 +228,8 @@ void read_cfg_file(void)
 	if (n_extensions < N_EXTENSIONS && strlen(pathbuf) != 0) {
 	  cmd_extensions[n_extensions].ext = strdup(pathbuf);
 	  cmd_extensions[n_extensions].cmdline = strdup(p);
+	  cmd_extensions[n_extensions].do_pause = do_pause;
+
 	  n_extensions++;
 	}
       } else if (strcmp(pathbuf,"mode") == 0) {
@@ -338,7 +343,7 @@ main(int argc, char *argv[])
 	  for (i=0; i<n_extensions; i++) {
 	    if (has_ext(pathbuf,cmd_extensions[i].ext)) {
 	      sprintf(cmdbuf, cmd_extensions[i].cmdline, pathbuf);
-	      execute_command(cmdbuf,false);
+	      execute_command(cmdbuf,cmd_extensions[i].do_pause);
 	      break;
 	    }
 	  }

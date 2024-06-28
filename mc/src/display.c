@@ -48,7 +48,7 @@ void display_init(void)
     23, 16, 1, 0, // Scroll protection.
     23, 0, 152, 0, // No actions from control keys.
     15,            // No paged mode.
-    18, 0, 15      // Graphics colour to white
+    18, 0,         // Graphics colour, still needs a byte
   };
   
   /* set the mode */
@@ -61,6 +61,7 @@ void display_init(void)
   display_setattr(false,false);
   vdp_cursor_enable(false);
   mos_puts(&disp_str[0],sizeof disp_str, 0);
+  putch(fgcol);
   time = getsysvar_time();
   while (getsysvar_time() == time) {
   }
@@ -98,7 +99,6 @@ void display_init(void)
 void display_finish(void)
 {
   static char disp_str[] = {
-    17, 15, 17, 128, // colours back to white fg/black bg
     26, // Cancel text viewport
     12, // Clear screen
     23, 0, 192, 1, // Set logical coordinates.
