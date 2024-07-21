@@ -1,6 +1,8 @@
 /* 12AM COmmander, a Midnight Commander Lookalike for Agon Light.
    11/05/2024
    23/06/2024: added mode/font/video mode config
+   21/07/2024: do case-insensitive compare. do not add path to filename in
+               commands.
  */
 #include <stdio.h>
 #include <string.h>
@@ -12,6 +14,19 @@
 #include <agon/vdp_vdu.h>
 #include "mc.h"
 
+
+int my_strcasecmp(char *p,char *q)
+{
+  char c1,c2;
+  for(;;) {
+    c1 = *p++;
+    c2 = *q++;
+    if (c1 >= 'a' && c1 <= 'z') c1-=0x20; 
+    if (c2 >= 'a' && c2 <= 'z') c2-=0x20;
+    if (c1 != c2) return c1-c2;
+    if ((c1 | c2 ) == 0) return 0;
+ }
+}
 
 char dirname_left[256];
 char dirname_right[256];
@@ -94,11 +109,15 @@ void execute_command(char *cmdline,bool fWait)
 char cmdbuf[256];
 char pathbuf[256];
 
-void set_pathbuf(void)
+void set_pathbuf(bool fFullPath)
 {
-  strcpy(pathbuf,which_dir==1?dirname_left:dirname_right);
-  if (strcmp(pathbuf,"/")!=0) {
-    strcat(pathbuf,"/");
+  if (fFullPath) {
+    strcpy(pathbuf,which_dir==1?dirname_left:dirname_right);
+    if (strcmp(pathbuf,"/")!=0) {
+      strcat(pathbuf,"/");
+    }
+  } else {
+    pathbuf[0]=0;
   }
   strcat(pathbuf,dirlist_get_name(which_dir==1?dirlist_left:dirlist_right));
 }
@@ -183,7 +202,6 @@ char * scan_word(char*dest, char *src)
   return p;     
 }
 
-
 /* Replacement for fgets as the one in AgDev appears to be broken,
    does not detect EOF on real machine */
 static char * my_fgets(char *s, unsigned int maxlen, FILE *f)
@@ -215,12 +233,12 @@ void read_cfg_file(void)
       cmdbuf[strlen(cmdbuf)-1] = 0; /* Get rid of trailing newline */
       p = cmdbuf;
       p = scan_word(pathbuf,p);
-      if (strcmp(pathbuf,"view") == 0) {
+      if (my_strcasecmp(pathbuf,"view") == 0) {
 	strcpy(viewer_cmd,p);
-      } else if (strcmp(pathbuf,"edit") == 0) {
+      } else if (my_strcasecmp(pathbuf,"edit") == 0) {
 	strcpy(editor_cmd,p);
-      } else if (strcmp(pathbuf,"exec") == 0 || strcmp(pathbuf,"execp") == 0) {
-	do_pause = strcmp(pathbuf,"execp") == 0;
+      } else if (my_strcasecmp(pathbuf,"exec") == 0 || my_strcasecmp(pathbuf,"execp") == 0) {
+	do_pause = my_strcasecmp(pathbuf,"execp") == 0;
 	p = scan_word(pathbuf,p);
 	while (*p++==' ')
 	  ;
@@ -232,9 +250,9 @@ void read_cfg_file(void)
 
 	  n_extensions++;
 	}
-      } else if (strcmp(pathbuf,"mode") == 0) {
+      } else if (my_strcasecmp(pathbuf,"mode") == 0) {
 	video_mode = strtol(p,&p,10);
-      } else if (strcmp(pathbuf,"font") == 0) {
+      } else if (my_strcasecmp(pathbuf,"font") == 0) {
 	while (*p++ == ' ')
 	  ;
 	p--;
@@ -243,7 +261,7 @@ void read_cfg_file(void)
 	}else {
 	  font_nr = strtol(p,&p,10);
 	}
-      } else if (strcmp(pathbuf,"color") == 0 || strcmp(pathbuf,"colour") == 0) {
+      } else if (my_strcasecmp(pathbuf,"color") == 0 || my_strcasecmp(pathbuf,"colour") == 0) {
 	fgcol = strtol(p,&p,10);
 	bgcol = strtol(p,&p,10);
 	hlcol = strtol(p,&p,10);
@@ -335,8 +353,9 @@ main(int argc, char *argv[])
 		  which_dir==1?dirname_left:dirname_right);
       } else {
 	mos_cd(which_dir==1?dirname_left:dirname_right);
-	set_pathbuf();
+	set_pathbuf(false);
 	if (has_ext(pathbuf,"bin")) {
+	  set_pathbuf(true);
 	  execute_command(pathbuf,false);
 	} else {
 	  unsigned int i;
@@ -362,12 +381,14 @@ main(int argc, char *argv[])
       execute_command(cmdbuf,true);
       break;
     case 161: /* F3 view */
-      set_pathbuf();
+      set_pathbuf(false);
+      mos_cd(which_dir==1?dirname_left:dirname_right);
       sprintf(cmdbuf,viewer_cmd,pathbuf);
       execute_command(cmdbuf,false);
       break;
     case 162: /* F4 Edit */
-      set_pathbuf();
+      set_pathbuf(false);
+      mos_cd(which_dir==1?dirname_left:dirname_right);
       sprintf(cmdbuf,editor_cmd,pathbuf);
       execute_command(cmdbuf,false);
       break;
@@ -384,10 +405,12 @@ main(int argc, char *argv[])
 	  vdp_cursor_enable(true);
 	  mos_editline(pathbuf,256,true);
 	  vdp_cursor_enable(false);
+	  putch(12);
 	  mos_copy(cmdbuf,pathbuf);
 	} else {
 	  printf("Copy %d selected files to %s? (Y/N)\n",n_selected,which_dir==1?dirname_right:dirname_left);
 	  ch = getch();
+	  putch(12);
 	  if (ch=='y' || ch=='Y') {
 	    nm = dirlist_first_selected(which_dir==1?dirlist_left:dirlist_right);
 	    while (nm != NULL) {	      
@@ -416,10 +439,12 @@ main(int argc, char *argv[])
 	  vdp_cursor_enable(true);
 	  mos_editline(pathbuf,256,true);
 	  vdp_cursor_enable(false);
+	  putch(12);
 	  mos_ren(cmdbuf,pathbuf);
 	} else {
 	  printf("Move %d selected files to %s? (Y/N)\n",n_selected,which_dir==1?dirname_right:dirname_left);
 	  ch = getch();
+	  putch(12);
 	  if (ch=='y' || ch=='Y') {
 	    nm = dirlist_first_selected(which_dir==1?dirlist_left:dirlist_right);
 	    while (nm != NULL) {	      
@@ -443,6 +468,7 @@ main(int argc, char *argv[])
       vdp_cursor_enable(true);
       mos_editline(cmdbuf,256,true);
       vdp_cursor_enable(false);
+      putch(12);
       mos_mkdir(cmdbuf);
       cmd_reload_dir();
       break;
@@ -457,12 +483,14 @@ main(int argc, char *argv[])
 	  strcpy(cmdbuf,dirlist_get_name(which_dir==1?dirlist_left:dirlist_right));
 	  printf("Delete file: %s? (Y/N)\n",cmdbuf);
 	  ch = getch();
+	  putch(12);
 	  if (ch=='y' || ch=='Y') {
 	    mos_del(cmdbuf);
 	  }
 	} else {
 	  printf("Delete %d selected files? (Y/N)\n",n_selected);
 	  ch = getch();
+	  putch(12);
 	  if (ch=='y' || ch=='Y') {
 	    nm = dirlist_first_selected(which_dir==1?dirlist_left:dirlist_right);
 	    while (nm != NULL) {
@@ -503,6 +531,7 @@ main(int argc, char *argv[])
 	vdp_cursor_enable(true);
 	mos_editline(cmdbuf,256,true);
 	vdp_cursor_enable(false);
+	putch(12);
 	dirlist_select_pattern(which_dir,which_dir==1?dirlist_left:dirlist_right,cmdbuf);	
 	break;
       case '\\':
@@ -513,6 +542,7 @@ main(int argc, char *argv[])
 	vdp_cursor_enable(true);
 	mos_editline(cmdbuf,256,true);
 	vdp_cursor_enable(false);
+	putch(12);
 	dirlist_deselect_pattern(which_dir,which_dir==1?dirlist_left:dirlist_right,cmdbuf);	
 	break;
       case 12: /* Ctrl-L, reload directories */

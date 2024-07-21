@@ -19,6 +19,11 @@ extern uint8_t fgcol; /* Foreground colour */
 extern uint8_t bgcol;  /* Background colour */
 extern uint8_t hlcol; /* Hilite colour */
 
+
+/* Replancement for strcasecmp */
+int my_strcasecmp(char *p,char *q);
+
+
 /* Number of bytes fitting into a single directory window*/
 extern uint8_t dirwin_height;
 

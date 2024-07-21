@@ -42,3 +42,6 @@ bin/mc.bin: mc/launcher.bin mc/mc.asm
 
 mc/launcher.bin: mc/launcher.asm mos_api.inc
 	cd mc;$(ASM) launcher.asm
+
+clean:
+	cd mc;make clean;cd ../recode;make clean;cd ../loadfont;make clean;cd ..; rm -f bin/*.ovl bin/*.bin mos/*.bin

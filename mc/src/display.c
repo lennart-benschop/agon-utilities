@@ -139,7 +139,7 @@ void display_frame(void)
   vdp_move_to(scr_cols*font_width/2+font_width-1,font_height+4);
   vdp_line_to(scr_cols*font_width/2+font_width-1,font_height*(4+dirwin_height)+4);
   
-  vdp_cursor_tab(scr_rows-1,0);
+  vdp_cursor_tab(0,scr_rows-1);
   for (i=0;i<10;i++ ) {
     display_setattr(false,true);
     printf("%2d",i+1);
@@ -183,7 +183,7 @@ void display_setwin(uint8_t w)
 void display_curdir(uint8_t which, char *s, bool hilight)
 {
   putch(26);
-  vdp_cursor_tab(0,(scr_cols/2)*(which-1)+1);
+  vdp_cursor_tab((scr_cols/2)*(which-1)+1,0);
   display_setattr(hilight,false);
   printf("%-38.38s",s);
   display_setattr(false,false);
@@ -195,7 +195,7 @@ void display_curdir(uint8_t which, char *s, bool hilight)
 void display_curfile(uint8_t which, char *s)
 {
   putch(26);
-  vdp_cursor_tab(dirwin_height+3,(scr_cols/2)*(which-1)+1);
+  vdp_cursor_tab((scr_cols/2)*(which-1)+1,dirwin_height+3);
   display_setattr(false,false);
   printf("%-38.38s",s);
 }

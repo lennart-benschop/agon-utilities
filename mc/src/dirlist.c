@@ -35,7 +35,7 @@ static int entry_compare(const void *a, const void *b)
   const dirinfo_t *e1 = a;
   const dirinfo_t *e2 = b;
   if (e1->is_dir == e2->is_dir) {
-    return strcmp(e1->name,e2->name);
+    return my_strcasecmp(e1->name,e2->name);
   }
   else if (e1->is_dir) {
     return -1;
@@ -169,7 +169,7 @@ void dirlist_show(uint8_t which, struct dirlist *dir)
     for (row = 0; row<dirwin_height; row++) {
       if (idx >= dir->n_entries)
 	break;
-      vdp_cursor_tab(row,0);
+      vdp_cursor_tab(0,row);
       dirlist_show_entry(&dir->entries[idx], row == (dir->sel_idx - dir->top_idx));
       idx++;
     }      
@@ -188,7 +188,7 @@ void dirlist_move_cursor(uint8_t which, struct dirlist *dir, int direction)
     return;
   }
   old_row = dir->sel_idx - dir->top_idx;
-  vdp_cursor_tab(old_row,0);
+  vdp_cursor_tab(0,old_row);
   dirlist_show_entry(&dir->entries[dir->sel_idx], false);
   new_idx = (signed)dir->sel_idx + direction;
   if (new_idx < 0) {
@@ -206,7 +206,7 @@ void dirlist_move_cursor(uint8_t which, struct dirlist *dir, int direction)
     }
     dirlist_show(which,dir);
   } else {
-    vdp_cursor_tab(new_row,0);
+    vdp_cursor_tab(0,new_row);
     dirlist_show_entry(&dir->entries[dir->sel_idx], true);    
     display_curfile(which,dir->entries[dir->sel_idx].name);
   }
