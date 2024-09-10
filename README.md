@@ -155,6 +155,53 @@ This converts a text file from CP1252 to Latin9 (ISO8859-15) without
 changing the end-of-line characters.
 
 
+### find
+
+This program finds files (in the entire file system) whose name matches a
+specific pattern.
+
+Example:
+`find *.c`
+
+This will find all files whose name matches the pattern `*.c` in the whole
+file system.
+
+You can use the '>' character to redirect the output to a file. Example:
+`find *.asm >all_asmfiles.txt`
+
+### grep
+
+This program searches test files for specific strings.
+
+Example:
+`grep dirlist *.c`
+
+This will find all lines containing "dirlist" in all C source files.
+
+You can do a case-insensitive grep using the `-i` option. It will only consider
+ASCII letters. You can also enclose the search string in double quotes to
+search for a string containint spaces"
+
+Example:
+`grep -i "these few words" *.txt`
+
+You can use the '>' character to redirect the output to a file. Example:
+`grep dirlist *.c >results.txt`
+
+### sort
+
+This program sorts lines in a text file in ASCII-lexigographic order.
+
+Example:
+
+`sort myfile.txt`
+
+You can use the '>' character to redirect the output to a file.
+Example:
+
+`sort myfile.txt >sorted.txt`
+
+
 ### nano
 
 This is an editor with nano-style key bindings.
@@ -170,7 +217,7 @@ Example command using a buffer:
 It can take a third parameter to specify the line number on which the cursor must start. Example:
 `nano myfile.txt &90000 231`
 
-The edditor runs in MODE 0 (it selects this mode when started) and tries to return to the mode from which it was called.
+The editor runs in MODE 0 (it selects this mode when started) and tries to return to the mode from which it was called.
 Key bindings are nano-style, but not all are implemented (far from).
 
 Implemented key bindings: Control-A, Control-E to go to the start or end of a line, Control-Y and Control-V for page-up and
