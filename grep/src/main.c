@@ -10,6 +10,15 @@
 #include <stdbool.h>
 #include <mos_api.h>
 
+static char *my_index(char *s, char c)
+{
+  while (*s) {
+    if (*s == c)
+      return s;
+    s++;
+  }
+  return NULL;
+}
 
 static bool glob_is_match(char *name, char *pat)
 {
@@ -34,6 +43,7 @@ static bool glob_is_match(char *name, char *pat)
 }
 
 bool nocase = false;
+bool singlefile = false;
 
 static char buf[1024];
 static char linebuf[256];
@@ -107,8 +117,11 @@ static void search_file(char *fname, char *string_pat)
   file_idx = 0;
   buf_filled = 0;
   while (nextline()) {
-    if (str_match(linebuf,string_pat))
-      printf("%s: %s\n",fname,linebuf);
+    if (str_match(linebuf,string_pat)) {
+      if (!singlefile)
+	printf("%s:",fname);
+      printf("%s\n",linebuf);
+    }
   }
   fclose(f);
 }
@@ -117,31 +130,44 @@ static void search_file(char *fname, char *string_pat)
 int
 main(int argc, char *argv[])
 {
-  unsigned int nopts = 0;
+  int nopts = 0;
   DIR dir_struct;
   FILINFO file_struct;
   int res;
-  
-  if (argc < 3) {
-    fprintf(stderr,"Usage: grep [-i] <string> <files>\n");
-    return 19;
-  }
-  if (strcmp(argv[1],"-i")==0) {
-    nocase = true;
-    nopts += 1;
-  }
-  res = ffs_dopen(&dir_struct,".");
-  if (res == 0) {
-    for (;;) {
-      res = ffs_dread(&dir_struct,&file_struct);
-      if (res != 0 || file_struct.fname[0]==0)
-	break;
-      if ((file_struct.fattrib & 0x10) == 0 &&
-	  glob_is_match(file_struct.fname,argv[2+nopts])) {
-	search_file(file_struct.fname,argv[1+nopts]);
-      }
+  char *pat;
+
+  for (;;) {
+    if (argc < nopts+3) {
+      fprintf(stderr,"Usage: grep [-i] <string> <files>\n");
+      return 19;
     }
-    ffs_dclose(&dir_struct);
+    if (strcmp(argv[nopts+1],"-i")==0) {
+      nocase = true;
+      nopts += 1;
+    } else {
+      break;
+    }
+  }
+  pat = argv[1+nopts];
+  if (nopts+3 == argc &&
+      my_index(argv[nopts+2],'*')==0 &&
+      my_index(argv[nopts+2],'?')==0) { /* single file no wildcard */
+    singlefile = true;
+  }
+  for (; nopts<argc-2; nopts++) {
+    res = ffs_dopen(&dir_struct,".");
+    if (res == 0) {
+      for (;;) {
+	res = ffs_dread(&dir_struct,&file_struct);
+	if (res != 0 || file_struct.fname[0]==0)
+	  break;
+	if ((file_struct.fattrib & 0x10) == 0 &&
+	    glob_is_match(file_struct.fname,argv[2+nopts])) {
+	  search_file(file_struct.fname,pat);
+	}
+      }
+      ffs_dclose(&dir_struct);
+    }
   }
   return 0;	 
 }

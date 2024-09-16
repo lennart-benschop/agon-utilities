@@ -1,7 +1,7 @@
 ASM=ez80asm
 
 .PHONY: binaries
-binaries: mos/memfill.bin mos/more.bin mos/font.bin mos/fontctl.bin mos/comp.bin mos/nano.bin bin/loadfont.bin bin/recode.bin mos/find.bin mos/grep.bin bin/sort.bin  bin/mc.bin bin/12amc.ovl 
+binaries: mos/memfill.bin mos/more.bin mos/font.bin mos/fontctl.bin mos/comp.bin mos/nano.bin bin/loadfont.bin bin/recode.bin mos/find.bin mos/grep.bin mos/wc.bin bin/sort.bin  bin/mc.bin bin/12amc.ovl 
 
 loadfont/src/codepages.h: loadfont/src/gen_codepages.py
 	cd loadfont/src;python3 gen_codepages.py >codepages.h
@@ -39,6 +39,10 @@ mos/find.bin: find/src/*.[ch]
 mos/grep.bin: grep/src/*.[ch]
 	mkdir -p bin
 	cd grep;make;mv bin/grep.bin ../mos
+
+mos/wc.bin: wc/src/*.[ch]
+	mkdir -p bin
+	cd wc;make;mv bin/wc.bin ../mos
 
 bin/sort.bin: sort/src/*.[ch]
 	mkdir -p bin

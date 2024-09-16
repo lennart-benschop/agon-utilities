@@ -161,12 +161,14 @@ This program finds files (in the entire file system) whose name matches a
 specific pattern.
 
 Example:
+
 `find *.c`
 
 This will find all files whose name matches the pattern `*.c` in the whole
 file system.
 
 You can use the '>' character to redirect the output to a file. Example:
+
 `find *.asm >all_asmfiles.txt`
 
 ### grep
@@ -174,6 +176,7 @@ You can use the '>' character to redirect the output to a file. Example:
 This program searches test files for specific strings.
 
 Example:
+
 `grep dirlist *.c`
 
 This will find all lines containing "dirlist" in all C source files.
@@ -183,10 +186,13 @@ ASCII letters. You can also enclose the search string in double quotes to
 search for a string containint spaces"
 
 Example:
+
 `grep -i "these few words" *.txt`
 
-You can use the '>' character to redirect the output to a file. Example:
-`grep dirlist *.c >results.txt`
+You can use the '>' character to redirect the output to a file and you
+can have multiple file names or wildcards. Example:
+
+`grep dirlist *.c *.h  >results.txt`
 
 ### sort
 
@@ -201,6 +207,24 @@ Example:
 
 `sort myfile.txt >sorted.txt`
 
+THe proghram has the follwoignoptions: -f to sort case-insensitive and -r
+to sort in reverse order.
+
+### wc
+
+This program counts lines, words and characters in one or more files.
+It uses the options -l, -w and -c to specify that lines words and characters
+must be counted. If none are specified, all are counted.
+
+Example:
+
+`wc -w *.c`
+
+Count only words in all C source files
+
+`wc readme.txt info.txt`
+
+Count lines, words and characters in readme.txt and info.txt
 
 ### nano
 

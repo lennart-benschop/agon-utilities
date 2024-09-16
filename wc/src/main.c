@@ -124,19 +124,21 @@ main(int argc, char *argv[])
     count_words = true;
     count_chars = true;
   }
-  res = ffs_dopen(&dir_struct,".");
-  if (res == 0) {
-    for (;;) {
-      res = ffs_dread(&dir_struct,&file_struct);
-      if (res != 0 || file_struct.fname[0]==0)
-	break;
-      if ((file_struct.fattrib & 0x10) == 0 &&
-	  glob_is_match(file_struct.fname,argv[1+nopts])) {
-	nfiles++;
-	count_file(file_struct.fname);
+  for (; nopts<argc-1; nopts++) {
+    res = ffs_dopen(&dir_struct,".");
+    if (res == 0) {
+      for (;;) {
+	res = ffs_dread(&dir_struct,&file_struct);
+	if (res != 0 || file_struct.fname[0]==0)
+	  break;
+	if ((file_struct.fattrib & 0x10) == 0 &&
+	    glob_is_match(file_struct.fname,argv[1+nopts])) {
+	  nfiles++;
+	  count_file(file_struct.fname);
+	}
       }
+      ffs_dclose(&dir_struct);
     }
-    ffs_dclose(&dir_struct);
   }
   if (nfiles>1) show_line(total_lines, total_words, total_chars, "total");
   return 0;	 
