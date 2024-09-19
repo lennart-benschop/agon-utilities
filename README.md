@@ -154,6 +154,30 @@ characters to LF only.
 This converts a text file from CP1252 to Latin9 (ISO8859-15) without
 changing the end-of-line characters.
 
+### cal
+
+This is a simple Unix-style calender program. Specify month and year to
+show a calendar of just one month. Example:
+
+`cal 5 2024`
+
+shows a calendar of just May 2024. Specify just a year to show the calendar
+of the whole yar. Example:
+
+`cal 2024`
+
+Options: -s shows Sunday as the first day of the week (default is Monday).
+
+### concat
+
+This program concatenates one or more files to form another file:
+
+Example:
+
+`concat prog1.bas prog2.bas >prog.bas`
+
+Concatenates prog1.bas and prog2.bas and writes the whole to
+prog.bas. Comparable to the Unix cat command,
 
 ### find
 
