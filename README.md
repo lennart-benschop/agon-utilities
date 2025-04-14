@@ -6,15 +6,16 @@ The project will include an editor some day. All are MOS commands, all are writt
 Parts of the code are based on the repository https://github.com/breakintoprogram/agon-projects
 
 The projects are built with ez80asm
-(https://github.com/envenomator/agon-ez80asm) and AgDev
-(https://github.com/pcawte/AgDev). Under Linux, make sure to have a
-driectory containing ez80asm and the binary directory of AgDev in your
+(https://github.com/AgonConsole8/agon-ez80asm) and agondev
+(https://github.com/AgonConsole8/agondev). Under Linux, make sure to have a
+driectory containing ez80asm and the binary directory of agondev in your
 path and you can just run make to build the utilities.
 
 All pre-assembled and precompiled binaries are also provided. The
-`loadfont` and `recode` programs, as well as everything belonging to
-`mc`, must be in the `bin` directory and the other binaries in the
-`mos` directory. Assumed is Agon Console8 MOS-2.23 and VDP-2.8.0.
+`loadfont`, `recode` and `sort` programs, as well as everything
+belonging to `mc`, must be in the `bin` directory and the other
+binaries in the `mos` directory. Assumed is Agon Console8 MOS-2.23 or
+higher and VDP-2.8.0 or higher.
 
 Note: the copy utility has been removed because it is now an internal command in MOS.
 
