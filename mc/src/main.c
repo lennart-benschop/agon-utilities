@@ -64,13 +64,15 @@ void execute_command(char *cmdline,bool fWait)
     char *p = (char*)LAUNCHER_EXT_EXEC;
     /* Put full name of executable at LAUNCHER_EXT_EXEC  */
     if (q[0]=='/') {
-      strcpy(p,q);
-      q+=strlen(q);
+      while (*q!=0 && *q!=' ') {
+	*p++ = *q++;
+      }
+      *p = 0;
       q++;
     } else {
       strcpy(p,"/bin/");
       p+=strlen(p);
-      while (*q!=0) {
+      while (*q!=0 && *q!=' ') {
 	*p++ = *q++;
       }
       *p = 0;
