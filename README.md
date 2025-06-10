@@ -266,21 +266,41 @@ Example command using a buffer:
 It can take a third parameter to specify the line number on which the cursor must start. Example:
 `nano myfile.txt &90000 231`
 
-The editor runs in MODE 0 (it selects this mode when started) and tries to return to the mode from which it was called.
+The editor switches to a 80-column mode (mode 3) if not already in a
+mode with at least 80 text columns.
+
 Key bindings are nano-style, but not all are implemented (far from).
 
-Implemented key bindings: Control-A, Control-E to go to the start or end of a line, Control-Y and Control-V for page-up and
-page-down, COntrol-L to redraw the screen with the current line in the centre, Control-G to see a help screen, Control-X to exit, Control-O to save the file, 
-Control-D for forward delete. Control-K to cut current line (repeat to cut block of lines), Control-U to paste
-And of course the cursor keys, TAB, Backspace and Enter.
+Implemented key bindings: Control-A, Control-E to go to the start or
+end of a line, Control-Y and Control-V for page-up and page-down,
+COntrol-L to redraw the screen with the current line in the centre,
+Control-G to see a help screen, Control-X to exit, Control-O to save
+the file, Control-D for forward delete. Control-K to cut current line
+(repeat to cut block of lines), Control-U to paste And of course the
+cursor keys, TAB, Backspace and Enter.  Control-R for reading and
+inserting a file, Control-W and Control-Q for search forward and
+backward.
 
-Different from nano (as nano uses impossible control and alt combinations for these functions): Control-C to copy current line,
-Control-H to go to a specific line (enter a number).
+Different from nano (as nano uses impossible control and alt
+combinations for these functions): Control-C to copy current line,
+Control-H to go to a specific line (enter a number).  Control-T to
+insert special characters.
 
-Planned: Control-R for reading and inserting a file, Control-W and Control-Q
-for search forward and backward. Also Control-T to insert special characters.
+### ne
 
-Possibly planned: Control-J for justifying paragraph, Control-\ for search+replace, Control-W for wordwrap functionality (non-nano).
+This is an extended editor with largely the same functionality as nano.
+However, it is not a moslet and it is written in C instead of assembler.
+It does not take a buffer address parameter, it can just edit large
+files. Being a C program it is easier to maintain and extend. The current
+version does not support a line number parameter.
+
+`ne myfile.txt`
+
+Added functionality compared to nano:
+* Control-J for justifying paragraph,
+* COnfig file /bin/ne.cfg can specify line ending conventions and tabstops.
+
+Saving files with CR-LF line endings takes too long, this will be fixed later.
 
 ### mc
 
