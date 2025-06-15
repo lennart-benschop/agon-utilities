@@ -3,6 +3,7 @@
    23/06/2024: added mode/font/video mode config
    21/07/2024: do case-insensitive compare. do not add path to filename in
                commands.
+   15/06/2025: fix external command execution.
  */
 #include <stdio.h>
 #include <string.h>
@@ -59,6 +60,7 @@ void execute_command(char *cmdline,bool fWait)
   display_finish();
   cmdline[strlen(cmdline)+1] = 0;
   res = mos_oscli(cmdline,NULL,0); /* OSCLI will do internal commands and moslets*/
+  //putch(12);printf("Command line: \'%s\'\n",cmdline);getch();
   if (res == 20) { /* Try it as an external command (execute from /bin) */
     char *q = cmdline;
     char *p = (char*)LAUNCHER_EXT_EXEC;
@@ -236,8 +238,10 @@ void read_cfg_file(void)
       p = cmdbuf;
       p = scan_word(pathbuf,p);
       if (my_strcasecmp(pathbuf,"view") == 0) {
+	while (*p==' ') p++;
 	strcpy(viewer_cmd,p);
       } else if (my_strcasecmp(pathbuf,"edit") == 0) {
+	while (*p==' ') p++;
 	strcpy(editor_cmd,p);
       } else if (my_strcasecmp(pathbuf,"exec") == 0 || my_strcasecmp(pathbuf,"execp") == 0) {
 	do_pause = my_strcasecmp(pathbuf,"execp") == 0;
